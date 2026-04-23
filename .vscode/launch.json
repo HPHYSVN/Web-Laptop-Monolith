@@ -1,0 +1,14 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Spring Boot-LaptopApplication<laptop>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "vn.haui.laptop.LaptopApplication",
+            "projectName": "laptop",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}

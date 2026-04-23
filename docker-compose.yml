@@ -1,0 +1,18 @@
+version: '3.8'
+services:
+  mysql-db:
+    image: mysql:8.0
+    container_name: laptop_store_db
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: laptop_store
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
