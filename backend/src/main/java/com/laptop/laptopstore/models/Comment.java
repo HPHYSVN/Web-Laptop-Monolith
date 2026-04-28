@@ -1,0 +1,30 @@
+package com.laptop.laptopstore.models;
+
+import jakarta.persistence.*;
+import lombok.*;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "comments")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class Comment {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_id", nullable = false)
+    private Product product;
+
+    @Column(columnDefinition = "TEXT", nullable = false)
+    private String content;
+
+    private LocalDateTime date;
+}
