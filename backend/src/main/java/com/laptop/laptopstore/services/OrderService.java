@@ -1,5 +1,6 @@
 package com.laptop.laptopstore.services;
 
+import com.laptop.laptopstore.dtos.OrderDTO;
 import com.laptop.laptopstore.models.*;
 import com.laptop.laptopstore.repositories.*;
 import lombok.RequiredArgsConstructor;
@@ -8,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -18,8 +20,21 @@ public class OrderService {
     private final CartDetailRepository cartDetailRepository;
     private final UserRepository userRepository;
 
+    private OrderDTO convertToDTO(Order order) {
+        return OrderDTO.builder()
+                .id(order.getId())
+                .receiverName(order.getReceiverName())
+                .receiverPhone(order.getReceiverPhone())
+                .receiverAddress(order.getReceiverAddress())
+                .totalPrice(order.getTotalPrice())
+                .status(order.getStatus())
+                .orderDate(order.getOrderDate())
+                .username(order.getUser() != null ? order.getUser().getUsername() : null)
+                .build();
+    }
+
     @Transactional
-    public Order checkout(Long userId, String receiverName, String address, String phone) {
+    public OrderDTO checkout(Long userId, String receiverName, String address, String phone) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         
@@ -58,6 +73,18 @@ public class OrderService {
         // Clear Cart
         cartDetailRepository.deleteAll(cartItems);
 
-        return order;
+        return convertToDTO(order);
+    }
+
+    // ADMIN APIs
+    public List<OrderDTO> getAllOrders() {
+        return orderRepository.findAll().stream().map(this::convertToDTO).collect(Collectors.toList());
+    }
+
+    public OrderDTO updateOrderStatus(Long orderId, String status) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+        order.setStatus(status);
+        return convertToDTO(orderRepository.save(order));
     }
 }

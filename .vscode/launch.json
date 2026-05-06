@@ -9,6 +9,16 @@
             "projectName": "laptop",
             "args": "",
             "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-LaptopStoreApplication<laptop-store>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.laptop.laptopstore.LaptopStoreApplication",
+            "projectName": "laptop-store",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
         }
     ]
 }
