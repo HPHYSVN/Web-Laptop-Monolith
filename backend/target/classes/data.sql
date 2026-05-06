@@ -1,7 +1,7 @@
--- Thêm dữ liệu Users mẫu (Mật khẩu đang lưu dạng plain text tạm thời, sẽ mã hóa sau)
+-- Thêm dữ liệu Users mẫu (Mật khẩu đã được mã hóa bằng bcrypt)
 INSERT INTO users (username, password, email, phone, role, create_date, avatar) VALUES 
-('admin', 'admin123', 'admin@laptopstore.com', '0123456789', 'ADMIN', NOW(), 'admin-avatar.png'),
-('khachhang1', 'khachhang123', 'khachhang1@gmail.com', '0987654321', 'USER', NOW(), 'default-avatar.png');
+('admin', '$2a$10$c4jX23ezti1XsINrvQ9Ubul.dNi91FKVon2RCeD6SlzLnpmsh86vS', 'admin@laptopstore.com', '0123456789', 'ADMIN', NOW(), 'admin-avatar.png'),
+('khachhang1', '$2a$10$ALTEpPL.EGnY1wWQoC8l4ugcKBAEqPKBwnoaz416gvDMMaBqquZFK', 'khachhang1@gmail.com', '0987654321', 'USER', NOW(), 'default-avatar.png');
 
 -- Thêm dữ liệu Categories
 INSERT INTO categories (category_name, category_description) VALUES 
