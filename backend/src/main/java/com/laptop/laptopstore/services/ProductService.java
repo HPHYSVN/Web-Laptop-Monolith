@@ -49,6 +49,12 @@ public class ProductService {
                 .map(this::convertToDTO).collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
+    public List<ProductDTO> filterProducts(com.laptop.laptopstore.dtos.ProductFilterDTO filterDTO) {
+        return productRepository.findAll(com.laptop.laptopstore.repositories.ProductSpecification.filterProducts(filterDTO))
+                .stream().map(this::convertToDTO).collect(Collectors.toList());
+    }
+
     // ADMIN APIs
     @Transactional
     public ProductDTO createProduct(ProductRequestDTO request) {

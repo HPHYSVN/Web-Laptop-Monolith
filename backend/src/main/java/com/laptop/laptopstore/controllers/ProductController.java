@@ -34,7 +34,10 @@ public class ProductController {
         return ResponseEntity.ok(productService.searchProducts(keyword));
     }
 
-
+    @PostMapping("/filter")
+    public ResponseEntity<?> filterProducts(@RequestBody com.laptop.laptopstore.dtos.ProductFilterDTO filterDTO) {
+        return ResponseEntity.ok(productService.filterProducts(filterDTO));
+    }
 
     // ADMIN APIs
     @PreAuthorize("hasRole('ADMIN')")

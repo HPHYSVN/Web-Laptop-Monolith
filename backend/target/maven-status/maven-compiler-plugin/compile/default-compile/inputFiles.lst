@@ -21,6 +21,7 @@
 /home/phamthuoi/Work/Web Java Monolith/backend/src/main/java/com/laptop/laptopstore/security/CustomUserDetailsService.java
 /home/phamthuoi/Work/Web Java Monolith/backend/src/main/java/com/laptop/laptopstore/models/OrderDetail.java
 /home/phamthuoi/Work/Web Java Monolith/backend/src/main/java/com/laptop/laptopstore/dtos/RamInforDTO.java
+/home/phamthuoi/Work/Web Java Monolith/backend/src/main/java/com/laptop/laptopstore/dtos/ProductFilterDTO.java
 /home/phamthuoi/Work/Web Java Monolith/backend/src/main/java/com/laptop/laptopstore/repositories/CpuInforRepository.java
 /home/phamthuoi/Work/Web Java Monolith/backend/src/main/java/com/laptop/laptopstore/repositories/RamInforRepository.java
 /home/phamthuoi/Work/Web Java Monolith/backend/src/main/java/com/laptop/laptopstore/models/User.java
@@ -38,6 +39,7 @@
 /home/phamthuoi/Work/Web Java Monolith/backend/src/main/java/com/laptop/laptopstore/repositories/CommentRepository.java
 /home/phamthuoi/Work/Web Java Monolith/backend/src/main/java/com/laptop/laptopstore/dtos/ProductRequestDTO.java
 /home/phamthuoi/Work/Web Java Monolith/backend/src/main/java/com/laptop/laptopstore/controllers/OrderController.java
+/home/phamthuoi/Work/Web Java Monolith/backend/src/main/java/com/laptop/laptopstore/repositories/ProductSpecification.java
 /home/phamthuoi/Work/Web Java Monolith/backend/src/main/java/com/laptop/laptopstore/models/MessageHistory.java
 /home/phamthuoi/Work/Web Java Monolith/backend/src/main/java/com/laptop/laptopstore/models/Comment.java
 /home/phamthuoi/Work/Web Java Monolith/backend/src/main/java/com/laptop/laptopstore/dtos/ProductDetailRequestDTO.java
