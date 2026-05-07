@@ -34,10 +34,7 @@ public class ProductController {
         return ResponseEntity.ok(productService.searchProducts(keyword));
     }
 
-    @GetMapping("/{id}/details")
-    public ResponseEntity<?> getProductDetails(@PathVariable Long id) {
-        return ResponseEntity.ok(productService.getProductDetails(id));
-    }
+
 
     // ADMIN APIs
     @PreAuthorize("hasRole('ADMIN')")

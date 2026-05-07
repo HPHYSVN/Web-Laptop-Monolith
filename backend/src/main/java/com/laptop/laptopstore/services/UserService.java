@@ -23,9 +23,9 @@ public class UserService {
         }
         
         user.setCreateDate(LocalDateTime.now());
-        if (user.getRole() == null) {
-            user.setRole("USER");
-        }
+        // Bảo mật: Luôn gán quyền USER khi đăng ký công khai
+        user.setRole("ROLE_USER");
+        
         if (user.getAvatar() == null) {
             user.setAvatar("default-avatar.png");
         }
