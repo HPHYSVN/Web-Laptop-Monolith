@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Search, SlidersHorizontal } from 'lucide-react';
 import {
-  Container, Row, Col, Card, CardBody, CardTitle, CardText, CardImg,
-  Button, Spinner, Alert, Input, ListGroup, ListGroupItem,
+  Container, Row, Col, Spinner, Alert,
 } from 'reactstrap';
 import { ProductDTO, CategoryDTO } from '../types';
 import { productService, categoryService } from '../services/api';
+import ProductCard from './ProductCard';
+import PageWrapper from './PageWrapper';
 
 const ProductListing: React.FC = () => {
   const [products, setProducts] = useState<ProductDTO[]>([]);
@@ -25,7 +26,7 @@ const ProductListing: React.FC = () => {
         ]);
         setProducts(productsData);
         setCategories(categoriesData);
-      } catch (err) {
+      } catch {
         setError('Failed to fetch products. Please try again later.');
       } finally {
         setLoading(false);
@@ -46,7 +47,7 @@ const ProductListing: React.FC = () => {
         setLoading(true);
         const data = await productService.getProductsByCategory(selectedCategory);
         setProducts(data);
-      } catch (err) {
+      } catch {
         setError('Failed to fetch products.');
       } finally {
         setLoading(false);
@@ -66,149 +67,129 @@ const ProductListing: React.FC = () => {
       setLoading(true);
       const data = await productService.searchProducts(searchTerm);
       setProducts(data);
-    } catch (err) {
+    } catch {
       setError('Search failed.');
     } finally {
       setLoading(false);
     }
   };
 
-  const formatPrice = (price: number): string => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
-    }).format(price);
-  };
-
-  const getFirstImage = (product: ProductDTO): string => {
-    if (product.details && product.details.length > 0) {
-      return product.details[0].imageDetail || 'https://via.placeholder.com/300x200';
-    }
-    return 'https://via.placeholder.com/300x200';
-  };
-
-  const getLowestPrice = (product: ProductDTO): number => {
-    if (product.details && product.details.length > 0) {
-      return Math.min(...product.details.map((d) => d.price));
-    }
-    return 0;
-  };
-
-  if (loading) {
-    return (
-      <Container className="py-5">
-        <div className="text-center">
-          <Spinner color="primary" size="lg" />
-          <p className="mt-3">Loading products...</p>
-        </div>
-      </Container>
-    );
-  }
-
-  if (error) {
-    return (
-      <Container className="py-5">
-        <Alert color="danger">{error}</Alert>
-      </Container>
-    );
-  }
-
   return (
-    <Container className="py-4">
-      <h2 className="mb-4">Products</h2>
-      <Row>
-        {/* Sidebar */}
-        <Col xs={12} lg={2} className="mb-4">
-          <h5>Categories</h5>
-          <ListGroup flush>
-            <ListGroupItem
-              active={selectedCategory === null}
-              tag="button"
-              action
-              onClick={() => setSelectedCategory(null)}
-            >
-              All Categories
-            </ListGroupItem>
-            {categories.map((cat) => (
-              <ListGroupItem
-                key={cat.id}
-                active={selectedCategory === cat.id}
-                tag="button"
-                action
-                onClick={() => setSelectedCategory(cat.id)}
-              >
-                {cat.categoryName}
-              </ListGroupItem>
-            ))}
-          </ListGroup>
-        </Col>
-
-        {/* Products Grid */}
-        <Col xs={12} lg={10}>
-          <Row className="mb-3">
-            <Col xs={12} md={8} lg={6}>
-              <Input
+    <PageWrapper>
+      <Container style={{ padding: '40px 24px', maxWidth: 'var(--max-width)' }}>
+        {/* Header */}
+        <div className="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4">
+          <div>
+            <h2>Products</h2>
+            <p style={{ color: 'var(--text-secondary)', margin: 0 }}>
+              {products.length} {products.length === 1 ? 'product' : 'products'} available
+            </p>
+          </div>
+          <div className="d-flex align-items-center gap-2" style={{ maxWidth: 400, width: '100%' }}>
+            <div className="search-bar-modern" style={{ flex: 1 }}>
+              <Search size={18} color="var(--text-muted)" />
+              <input
                 type="text"
-                placeholder="Search products..."
+                placeholder="Search laptops..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                className="input-modern"
+                style={{ border: 'none', padding: 0, boxShadow: 'none', background: 'transparent' }}
               />
-            </Col>
-            <Col xs={12} md="auto" className="mt-2 mt-md-0">
-              <Button color="primary" onClick={handleSearch}>
-                Search
-              </Button>
-            </Col>
-          </Row>
+            </div>
+            <button className="btn-primary-modern btn-sm-modern" onClick={handleSearch}>
+              <Search size={16} />
+            </button>
+          </div>
+        </div>
 
-          {products.length === 0 ? (
-            <Alert color="info">No products found.</Alert>
-          ) : (
-            <Row>
-              {products.map((product) => (
-                <Col key={product.id} xs={12} sm={6} md={4} lg={3} className="mb-4">
-                  <Card className="h-100 product-card">
-                    <CardImg
-                      top
-                      src={getFirstImage(product)}
-                      alt={product.productName}
-                      style={{ height: '200px', objectFit: 'cover' }}
-                    />
-                    <CardBody className="d-flex flex-column">
-                      <CardTitle style={{ fontSize: '1rem', height: '2.5rem' }}>
-                        {product.productName}
-                      </CardTitle>
-                      <CardText className="text-muted small mb-2">
-                        {product.categoryName}
-                      </CardText>
-                      <CardText className="flex-grow-1" style={{ fontSize: '0.875rem' }}>
-                        {product.productDescription?.substring(0, 100)}
-                        {product.productDescription?.length > 100 && '...'}
-                      </CardText>
-                      <div className="mt-auto">
-                        <h5 className="text-primary mb-3">
-                          {formatPrice(getLowestPrice(product))}
-                        </h5>
-                        <Button
-                          color="primary"
-                          size="sm"
-                          block
-                          tag={Link}
-                          to={`/products/${product.id}`}
-                        >
-                          View Details
-                        </Button>
-                      </div>
-                    </CardBody>
-                  </Card>
-                </Col>
-              ))}
-            </Row>
-          )}
-        </Col>
-      </Row>
-    </Container>
+        <Row>
+          {/* Sidebar */}
+          <Col xs={12} lg={2} className="mb-4">
+            <div
+              className="card-modern"
+              style={{ padding: 20, position: 'sticky', top: 'calc(var(--navbar-height) + 24px)' }}
+            >
+              <div className="d-flex align-items-center gap-2 mb-3">
+                <SlidersHorizontal size={18} color="var(--primary)" />
+                <h6 style={{ margin: 0, fontSize: '0.9375rem', fontWeight: 600 }}>Categories</h6>
+              </div>
+              <div className="d-flex flex-column gap-1">
+                <button
+                  onClick={() => setSelectedCategory(null)}
+                  style={{
+                    padding: '10px 14px',
+                    borderRadius: 'var(--radius-md)',
+                    border: 'none',
+                    background: selectedCategory === null ? 'var(--primary-gradient)' : 'transparent',
+                    color: selectedCategory === null ? 'white' : 'var(--text-secondary)',
+                    fontSize: '0.875rem',
+                    fontWeight: selectedCategory === null ? 600 : 500,
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    transition: 'all var(--transition-fast)',
+                    boxShadow: selectedCategory === null ? 'var(--shadow-md)' : 'none',
+                  }}
+                >
+                  All Categories
+                </button>
+                {categories.map((cat) => (
+                  <button
+                    key={cat.id}
+                    onClick={() => setSelectedCategory(cat.id)}
+                    style={{
+                      padding: '10px 14px',
+                      borderRadius: 'var(--radius-md)',
+                      border: 'none',
+                      background: selectedCategory === cat.id ? 'var(--primary-gradient)' : 'transparent',
+                      color: selectedCategory === cat.id ? 'white' : 'var(--text-secondary)',
+                      fontSize: '0.875rem',
+                      fontWeight: selectedCategory === cat.id ? 600 : 500,
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      transition: 'all var(--transition-fast)',
+                      boxShadow: selectedCategory === cat.id ? 'var(--shadow-md)' : 'none',
+                    }}
+                  >
+                    {cat.categoryName}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </Col>
+
+          {/* Products Grid */}
+          <Col xs={12} lg={10}>
+            {loading ? (
+              <div className="d-flex flex-column align-items-center gap-3 py-5">
+                <Spinner color="primary" />
+                <p style={{ color: 'var(--text-secondary)' }}>Loading products...</p>
+              </div>
+            ) : error ? (
+              <div
+                className="card-modern"
+                style={{ padding: 32, textAlign: 'center', borderLeft: '4px solid var(--danger)' }}
+              >
+                <p style={{ color: 'var(--danger)', fontWeight: 500, margin: 0 }}>{error}</p>
+              </div>
+            ) : products.length === 0 ? (
+              <div className="card-modern" style={{ padding: 48, textAlign: 'center' }}>
+                <p style={{ color: 'var(--text-muted)', margin: 0 }}>No products found.</p>
+              </div>
+            ) : (
+              <Row className="g-4">
+                {products.map((product, i) => (
+                  <Col key={product.id} xs={12} sm={6} md={4} lg={3}>
+                    <ProductCard product={product} index={i} />
+                  </Col>
+                ))}
+              </Row>
+            )}
+          </Col>
+        </Row>
+      </Container>
+    </PageWrapper>
   );
 };
 

@@ -24,6 +24,9 @@ public class ProductService {
     private final StorageInforRepository storageRepo;
     private final GpuInforRepository gpuRepo;
     private final ScreenInforRepository screenRepo;
+    private final CommentRepository commentRepository;
+    private final CartDetailRepository cartDetailRepository;
+    private final OrderDetailRepository orderDetailRepository;
 
     @Transactional(readOnly = true)
     public List<ProductDTO> getAllProducts() {
@@ -127,6 +130,27 @@ public class ProductService {
 
     @Transactional
     public void deleteProduct(Long id) {
+        // Delete comments referencing this product
+        List<Comment> comments = commentRepository.findByProductId(id);
+        for (Comment comment : comments) {
+            commentRepository.delete(comment);
+        }
+
+        // Delete product details and related records
+        List<ProductDetail> details = productDetailRepository.findByProductId(id);
+        for (ProductDetail detail : details) {
+            // Delete cart details referencing this product detail
+            cartDetailRepository.deleteByProductDetailId(detail.getId());
+            // Delete order details referencing this product detail
+            orderDetailRepository.deleteByProductDetailId(detail.getId());
+            // Delete specs
+            if (detail.getProductsSpecs() != null) {
+                productsSpecsRepository.delete(detail.getProductsSpecs());
+            }
+            // Delete product detail
+            productDetailRepository.delete(detail);
+        }
+        // Finally delete the product
         productRepository.deleteById(id);
     }
 

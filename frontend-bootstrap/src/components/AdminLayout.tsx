@@ -4,9 +4,9 @@ import AdminSidebar from './AdminSidebar';
 
 const AdminLayout: React.FC = () => {
   return (
-    <div className="d-flex min-vh-100">
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex' }}>
       <AdminSidebar />
-      <div className="flex-grow-1" style={{ overflow: 'auto' }}>
+      <div style={{ marginLeft: 260, flex: 1, minHeight: '100vh', overflow: 'auto' }}>
         <Outlet />
       </div>
     </div>

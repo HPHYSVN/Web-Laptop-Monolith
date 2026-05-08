@@ -1,20 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import {
-  Container,
-  Row,
-  Col,
-  Card,
-  CardBody,
-  Form,
-  FormGroup,
-  Label,
-  Input,
-  Button,
-  Alert,
-  Spinner,
-} from 'reactstrap';
+import { Container, Row, Col, Spinner } from 'reactstrap';
+import { User, Lock, Mail, Phone, UserPlus, ArrowRight } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import PageWrapper from '../../components/PageWrapper';
 
 const Register: React.FC = () => {
   const [username, setUsername] = useState('');
@@ -35,70 +24,160 @@ const Register: React.FC = () => {
       setSuccess('Registration successful! Redirecting to login...');
       setTimeout(() => navigate('/login'), 1500);
     } catch (err: any) {
-      setError(err.response?.data || 'Registration failed. Please try again.');
+      setError(err.response?.data?.message || err.response?.data || 'Registration failed. Please try again.');
     }
   };
 
   return (
-    <Container className="py-5">
-      <Row className="justify-content-center">
-        <Col md={6} lg={4}>
-          <Card>
-            <CardBody>
-              <h3 className="text-center mb-4">Register</h3>
-              {error && <Alert color="danger">{error}</Alert>}
-              {success && <Alert color="success">{success}</Alert>}
-              <Form onSubmit={handleSubmit}>
-                <FormGroup>
-                  <Label for="username">Username</Label>
-                  <Input
-                    id="username"
-                    type="text"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    required
-                  />
-                </FormGroup>
-                <FormGroup>
-                  <Label for="password">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </FormGroup>
-                <FormGroup>
-                  <Label for="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-                </FormGroup>
-                <FormGroup>
-                  <Label for="phone">Phone</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                  />
-                </FormGroup>
-                <Button color="primary" block disabled={loading}>
-                  {loading ? <Spinner size="sm" /> : 'Register'}
-                </Button>
-              </Form>
-              <p className="text-center mt-3 mb-0">
-                Already have an account? <Link to="/login">Login</Link>
+    <PageWrapper>
+      <Container style={{ padding: '60px 24px', maxWidth: 'var(--max-width)' }}>
+        <Row className="justify-content-center">
+          <Col md={6} lg={4}>
+            <div className="card-modern animate-scale-in" style={{ padding: 40, opacity: 0 }}>
+              <div className="text-center mb-4">
+                <div
+                  style={{
+                    width: 56,
+                    height: 56,
+                    borderRadius: 'var(--radius-lg)',
+                    background: 'var(--primary-gradient)',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'white',
+                    marginBottom: 16,
+                    boxShadow: '0 8px 24px rgba(37,99,235,0.3)',
+                  }}
+                >
+                  <UserPlus size={24} />
+                </div>
+                <h3 style={{ marginBottom: 4 }}>Create account</h3>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', margin: 0 }}>
+                  Get started with Laptop Store
+                </p>
+              </div>
+
+              {error && (
+                <div
+                  style={{
+                    padding: '12px 16px',
+                    borderRadius: 'var(--radius-md)',
+                    background: 'var(--danger-bg)',
+                    color: 'var(--danger)',
+                    fontSize: '0.875rem',
+                    marginBottom: 20,
+                    fontWeight: 500,
+                  }}
+                >
+                  {error}
+                </div>
+              )}
+              {success && (
+                <div
+                  style={{
+                    padding: '12px 16px',
+                    borderRadius: 'var(--radius-md)',
+                    background: 'var(--success-bg)',
+                    color: '#047857',
+                    fontSize: '0.875rem',
+                    marginBottom: 20,
+                    fontWeight: 500,
+                  }}
+                >
+                  {success}
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit}>
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: 6, color: 'var(--text-main)' }}>
+                    Username *
+                  </label>
+                  <div className="input-modern d-flex align-items-center gap-2">
+                    <User size={18} color="var(--text-muted)" />
+                    <input
+                      type="text"
+                      placeholder="Enter username"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      required
+                      style={{ border: 'none', background: 'transparent', outline: 'none', flex: 1, fontSize: '0.9375rem' }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: 6, color: 'var(--text-main)' }}>
+                    Password *
+                  </label>
+                  <div className="input-modern d-flex align-items-center gap-2">
+                    <Lock size={18} color="var(--text-muted)" />
+                    <input
+                      type="password"
+                      placeholder="Enter password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      style={{ border: 'none', background: 'transparent', outline: 'none', flex: 1, fontSize: '0.9375rem' }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: 6, color: 'var(--text-main)' }}>
+                    Email
+                  </label>
+                  <div className="input-modern d-flex align-items-center gap-2">
+                    <Mail size={18} color="var(--text-muted)" />
+                    <input
+                      type="email"
+                      placeholder="your@email.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      style={{ border: 'none', background: 'transparent', outline: 'none', flex: 1, fontSize: '0.9375rem' }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: 24 }}>
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: 6, color: 'var(--text-main)' }}>
+                    Phone
+                  </label>
+                  <div className="input-modern d-flex align-items-center gap-2">
+                    <Phone size={18} color="var(--text-muted)" />
+                    <input
+                      type="tel"
+                      placeholder="+84 ..."
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      style={{ border: 'none', background: 'transparent', outline: 'none', flex: 1, fontSize: '0.9375rem' }}
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  className="btn-primary-modern btn-lg-modern"
+                  disabled={loading}
+                  style={{ width: '100%' }}
+                >
+                  {loading ? <Spinner size="sm" color="light" /> : (
+                    <>Create Account <ArrowRight size={18} /></>
+                  )}
+                </button>
+              </form>
+
+              <p className="text-center" style={{ marginTop: 24, fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                Already have an account?{' '}
+                <Link to="/login" style={{ color: 'var(--primary)', fontWeight: 600, textDecoration: 'none' }}>
+                  Sign in
+                </Link>
               </p>
-            </CardBody>
-          </Card>
-        </Col>
-      </Row>
-    </Container>
+            </div>
+          </Col>
+        </Row>
+      </Container>
+    </PageWrapper>
   );
 };
 
