@@ -2,6 +2,7 @@ package com.laptop.laptopstore.controllers;
 
 import com.laptop.laptopstore.models.CartDetail;
 import com.laptop.laptopstore.services.CartService;
+import com.laptop.laptopstore.dtos.MergeCartRequestDTO;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -30,6 +31,16 @@ public class CartController {
                     request.getQuantity());
             return ResponseEntity.ok(detail);
         } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/merge")
+    public ResponseEntity<?> mergeCart(@RequestBody MergeCartRequestDTO request) {
+        try {
+            List<CartDetail> mergedDetails = cartService.mergeCart(request);
+            return ResponseEntity.ok(mergedDetails);
+        } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }

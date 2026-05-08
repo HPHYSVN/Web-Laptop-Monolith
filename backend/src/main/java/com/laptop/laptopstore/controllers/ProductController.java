@@ -56,6 +56,6 @@ public class ProductController {
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteProduct(@PathVariable Long id) {
         productService.deleteProduct(id);
-        return ResponseEntity.ok("Xóa sản phẩm thành công!");
+        return ResponseEntity.ok(java.util.Collections.singletonMap("message", "Xóa sản phẩm thành công!"));
     }
 }

@@ -2,6 +2,7 @@ package com.laptop.laptopstore.services;
 
 import com.laptop.laptopstore.models.*;
 import com.laptop.laptopstore.repositories.*;
+import com.laptop.laptopstore.dtos.MergeCartRequestDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -54,5 +55,19 @@ public class CartService {
                 .build();
         
         return cartDetailRepository.save(newDetail);
+    }
+
+    public List<CartDetail> mergeCart(MergeCartRequestDTO request) {
+        Long userId = request.getUserId();
+        if (request.getItems() != null) {
+            for (MergeCartRequestDTO.CartItemDTO item : request.getItems()) {
+                try {
+                    addToCart(userId, item.getProductDetailId(), item.getQuantity());
+                } catch (Exception e) {
+                    System.err.println("Failed to merge cart item: " + item.getProductDetailId() + " - " + e.getMessage());
+                }
+            }
+        }
+        return getCartDetails(userId);
     }
 }

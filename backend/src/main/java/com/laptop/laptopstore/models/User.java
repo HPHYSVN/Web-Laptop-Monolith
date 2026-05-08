@@ -31,4 +31,8 @@ public class User {
     private LocalDateTime createDate;
     
     private String avatar;
+    
+    @Column(nullable = false)
+    @Builder.Default
+    private String status = "ACTIVE";
 }

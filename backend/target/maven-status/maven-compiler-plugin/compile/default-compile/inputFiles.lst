@@ -1,9 +1,12 @@
 /home/phamthuoi/Work/Web Java Monolith/backend/src/main/java/com/laptop/laptopstore/dtos/OrderDTO.java
 /home/phamthuoi/Work/Web Java Monolith/backend/src/main/java/com/laptop/laptopstore/services/CategoryService.java
+/home/phamthuoi/Work/Web Java Monolith/backend/src/main/java/com/laptop/laptopstore/dtos/MergeCartRequestDTO.java
 /home/phamthuoi/Work/Web Java Monolith/backend/src/main/java/com/laptop/laptopstore/dtos/ProductDTO.java
 /home/phamthuoi/Work/Web Java Monolith/backend/src/main/java/com/laptop/laptopstore/services/SpecService.java
+/home/phamthuoi/Work/Web Java Monolith/backend/src/main/java/com/laptop/laptopstore/dtos/UserStatusRequestDTO.java
 /home/phamthuoi/Work/Web Java Monolith/backend/src/main/java/com/laptop/laptopstore/models/ProductDetail.java
 /home/phamthuoi/Work/Web Java Monolith/backend/src/main/java/com/laptop/laptopstore/repositories/StorageInforRepository.java
+/home/phamthuoi/Work/Web Java Monolith/backend/src/main/java/com/laptop/laptopstore/dtos/UserDTO.java
 /home/phamthuoi/Work/Web Java Monolith/backend/src/main/java/com/laptop/laptopstore/models/Discount.java
 /home/phamthuoi/Work/Web Java Monolith/backend/src/main/java/com/laptop/laptopstore/controllers/UserController.java
 /home/phamthuoi/Work/Web Java Monolith/backend/src/main/java/com/laptop/laptopstore/services/ProductService.java
