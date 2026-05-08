@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Search, SlidersHorizontal } from 'lucide-react';
+import { Search, SlidersHorizontal, X } from 'lucide-react';
 import {
   Container, Row, Col, Spinner, Alert,
 } from 'reactstrap';
-import { ProductDTO, CategoryDTO } from '../types';
+import { ProductDTO, CategoryDTO, ProductFilterDTO } from '../types';
 import { productService, categoryService } from '../services/api';
 import ProductCard from './ProductCard';
 import PageWrapper from './PageWrapper';
@@ -15,6 +15,10 @@ const ProductListing: React.FC = () => {
   const [error, setError] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [minPrice, setMinPrice] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
+  const [sortBy, setSortBy] = useState<string>('price');
+  const [sortOrder, setSortOrder] = useState<string>('asc');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -58,20 +62,37 @@ const ProductListing: React.FC = () => {
   }, [selectedCategory]);
 
   const handleSearch = async () => {
-    if (!searchTerm.trim()) {
-      const data = await productService.getAllProducts();
-      setProducts(data);
-      return;
-    }
+    await applyFilters();
+  };
+
+  const applyFilters = async () => {
     try {
       setLoading(true);
-      const data = await productService.searchProducts(searchTerm);
+      const filter: ProductFilterDTO = {
+        keyword: searchTerm || undefined,
+        categoryId: selectedCategory || undefined,
+        minPrice: minPrice ? parseFloat(minPrice) : undefined,
+        maxPrice: maxPrice ? parseFloat(maxPrice) : undefined,
+        sortBy,
+        sortOrder,
+      };
+      const data = await productService.filterProducts(filter);
       setProducts(data);
     } catch {
-      setError('Search failed.');
+      setError('Filter failed.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleReset = () => {
+    setSearchTerm('');
+    setMinPrice('');
+    setMaxPrice('');
+    setSelectedCategory(null);
+    setSortBy('price');
+    setSortOrder('asc');
+    applyFilters();
   };
 
   return (
@@ -101,6 +122,9 @@ const ProductListing: React.FC = () => {
             <button className="btn-primary-modern btn-sm-modern" onClick={handleSearch}>
               <Search size={16} />
             </button>
+            <button className="btn-secondary-modern btn-sm-modern" onClick={handleReset}>
+              <X size={16} />
+            </button>
           </div>
         </div>
 
@@ -113,48 +137,102 @@ const ProductListing: React.FC = () => {
             >
               <div className="d-flex align-items-center gap-2 mb-3">
                 <SlidersHorizontal size={18} color="var(--primary)" />
-                <h6 style={{ margin: 0, fontSize: '0.9375rem', fontWeight: 600 }}>Categories</h6>
+                <h6 style={{ margin: 0, fontSize: '0.9375rem', fontWeight: 600 }}>Filters</h6>
               </div>
-              <div className="d-flex flex-column gap-1">
-                <button
-                  onClick={() => setSelectedCategory(null)}
-                  style={{
-                    padding: '10px 14px',
-                    borderRadius: 'var(--radius-md)',
-                    border: 'none',
-                    background: selectedCategory === null ? 'var(--primary-gradient)' : 'transparent',
-                    color: selectedCategory === null ? 'white' : 'var(--text-secondary)',
-                    fontSize: '0.875rem',
-                    fontWeight: selectedCategory === null ? 600 : 500,
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                    transition: 'all var(--transition-fast)',
-                    boxShadow: selectedCategory === null ? 'var(--shadow-md)' : 'none',
+              
+              {/* Price Filter */}
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: 8, color: 'var(--text-main)' }}>
+                  Price Range (VND)
+                </label>
+                <div className="d-flex gap-2 align-items-center">
+                  <input
+                    type="number"
+                    placeholder="Min"
+                    value={minPrice}
+                    onChange={(e) => setMinPrice(e.target.value)}
+                    className="input-modern"
+                    style={{ fontSize: '0.8125rem', padding: '8px 12px' }}
+                  />
+                  <span style={{ color: 'var(--text-muted)' }}>-</span>
+                  <input
+                    type="number"
+                    placeholder="Max"
+                    value={maxPrice}
+                    onChange={(e) => setMaxPrice(e.target.value)}
+                    className="input-modern"
+                    style={{ fontSize: '0.8125rem', padding: '8px 12px' }}
+                  />
+                </div>
+              </div>
+
+              {/* Sort */}
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: 8, color: 'var(--text-main)' }}>
+                  Sort By
+                </label>
+                <select
+                  value={`${sortBy}-${sortOrder}`}
+                  onChange={(e) => {
+                    const [sort, order] = e.target.value.split('-');
+                    setSortBy(sort);
+                    setSortOrder(order);
                   }}
+                  className="input-modern select-modern"
+                  style={{ fontSize: '0.8125rem', padding: '8px 12px' }}
                 >
-                  All Categories
-                </button>
-                {categories.map((cat) => (
+                  <option value="price-asc">Price: Low to High</option>
+                  <option value="price-desc">Price: High to Low</option>
+                  <option value="discount-asc">Discount: Low to High</option>
+                  <option value="discount-desc">Discount: High to Low</option>
+                </select>
+              </div>
+
+              <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--border-light)' }}>
+                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: 8, color: 'var(--text-main)' }}>
+                  Categories
+                </label>
+                <div className="d-flex flex-column gap-1">
                   <button
-                    key={cat.id}
-                    onClick={() => setSelectedCategory(cat.id)}
+                    onClick={() => setSelectedCategory(null)}
                     style={{
-                      padding: '10px 14px',
+                      padding: '8px 12px',
                       borderRadius: 'var(--radius-md)',
                       border: 'none',
-                      background: selectedCategory === cat.id ? 'var(--primary-gradient)' : 'transparent',
-                      color: selectedCategory === cat.id ? 'white' : 'var(--text-secondary)',
-                      fontSize: '0.875rem',
-                      fontWeight: selectedCategory === cat.id ? 600 : 500,
+                      background: selectedCategory === null ? 'var(--primary-gradient)' : 'transparent',
+                      color: selectedCategory === null ? 'white' : 'var(--text-secondary)',
+                      fontSize: '0.8125rem',
+                      fontWeight: selectedCategory === null ? 600 : 500,
                       textAlign: 'left',
                       cursor: 'pointer',
                       transition: 'all var(--transition-fast)',
-                      boxShadow: selectedCategory === cat.id ? 'var(--shadow-md)' : 'none',
+                      boxShadow: selectedCategory === null ? 'var(--shadow-sm)' : 'none',
                     }}
                   >
-                    {cat.categoryName}
+                    All Categories
                   </button>
-                ))}
+                  {categories.map((cat) => (
+                    <button
+                      key={cat.id}
+                      onClick={() => setSelectedCategory(cat.id as number)}
+                      style={{
+                        padding: '8px 12px',
+                        borderRadius: 'var(--radius-md)',
+                        border: 'none',
+                        background: selectedCategory === cat.id ? 'var(--primary-gradient)' : 'transparent',
+                        color: selectedCategory === cat.id ? 'white' : 'var(--text-secondary)',
+                        fontSize: '0.8125rem',
+                        fontWeight: selectedCategory === cat.id ? 600 : 500,
+                        textAlign: 'left',
+                        cursor: 'pointer',
+                        transition: 'all var(--transition-fast)',
+                        boxShadow: selectedCategory === cat.id ? 'var(--shadow-sm)' : 'none',
+                      }}
+                    >
+                      {cat.categoryName}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </Col>
