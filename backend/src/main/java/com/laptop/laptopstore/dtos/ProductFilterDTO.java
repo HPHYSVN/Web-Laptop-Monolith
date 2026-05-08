@@ -11,4 +11,6 @@ public class ProductFilterDTO {
     private String ramSize; // Ví dụ: "16GB"
     private String cpuBrand; // Ví dụ: "Intel", "AMD", "Apple"
     private String storageCapacity; // Ví dụ: "512GB"
+    private String sortBy; // "price", "discount"
+    private String sortOrder; // "asc", "desc"
 }

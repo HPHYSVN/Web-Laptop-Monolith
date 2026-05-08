@@ -54,8 +54,42 @@ public class ProductService {
 
     @Transactional(readOnly = true)
     public List<ProductDTO> filterProducts(com.laptop.laptopstore.dtos.ProductFilterDTO filterDTO) {
-        return productRepository.findAll(com.laptop.laptopstore.repositories.ProductSpecification.filterProducts(filterDTO))
+        List<ProductDTO> products = productRepository.findAll(com.laptop.laptopstore.repositories.ProductSpecification.filterProducts(filterDTO))
                 .stream().map(this::convertToDTO).collect(Collectors.toList());
+
+        // Apply sorting
+        if (filterDTO.getSortBy() != null) {
+            String sortBy = filterDTO.getSortBy().toLowerCase();
+            String sortOrder = filterDTO.getSortOrder() != null ? filterDTO.getSortOrder().toLowerCase() : "asc";
+            boolean ascending = sortOrder.equals("asc");
+
+            if (sortBy.equals("price")) {
+                products.sort((p1, p2) -> {
+                    Double price1 = getLowestPrice(p1);
+                    Double price2 = getLowestPrice(p2);
+                    return ascending ? price1.compareTo(price2) : price2.compareTo(price1);
+                });
+            } else if (sortBy.equals("discount")) {
+                // For now, sort by price (discount logic to be implemented when discounts are integrated)
+                products.sort((p1, p2) -> {
+                    Double price1 = getLowestPrice(p1);
+                    Double price2 = getLowestPrice(p2);
+                    return ascending ? price1.compareTo(price2) : price2.compareTo(price1);
+                });
+            }
+        }
+
+        return products;
+    }
+
+    private Double getLowestPrice(ProductDTO product) {
+        if (product.getDetails() == null || product.getDetails().isEmpty()) {
+            return Double.MAX_VALUE;
+        }
+        return product.getDetails().stream()
+                .map(ProductDetailDTO::getPrice)
+                .min(Double::compare)
+                .orElse(Double.MAX_VALUE);
     }
 
     // ADMIN APIs

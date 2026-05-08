@@ -1,5 +1,5 @@
 export interface CpuInforDTO {
-  id: number;
+  id?: number;
   brands: string;
   speed: string;
   model: string;
@@ -11,7 +11,7 @@ export interface CpuInforDTO {
 }
 
 export interface RamInforDTO {
-  id: number;
+  id?: number;
   size: string;
   type: string;
   bus: string;
@@ -19,21 +19,21 @@ export interface RamInforDTO {
 }
 
 export interface StorageInforDTO {
-  id: number;
+  id?: number;
   type: string;
   capacity: string;
   interface: string;
 }
 
 export interface GpuInforDTO {
-  id: number;
+  id?: number;
   brands: string;
   model: string;
   vram: string;
 }
 
 export interface ScreenInforDTO {
-  id: number;
+  id?: number;
   size: string;
   resolution: string;
   panel: string;
@@ -71,7 +71,7 @@ export interface ProductDTO {
 }
 
 export interface CategoryDTO {
-  id: number;
+  id?: number;
   categoryName: string;
   categoryDescription?: string;
 }
@@ -154,4 +154,18 @@ export interface ProductFilterDTO {
   minPrice?: number;
   maxPrice?: number;
   keyword?: string;
+  sortBy?: string; // "price", "discount"
+  sortOrder?: string; // "asc", "desc"
+}
+
+export interface DiscountDTO {
+  id?: number;
+  code: string;
+  discountPercent: number;
+  maxPercent: number;
+  startDate: string;
+  endDate: string;
+  description: string;
+  quantity: number;
+  status?: string; // ACTIVE, EXPIRED, FUTURE
 }

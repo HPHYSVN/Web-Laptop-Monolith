@@ -47,6 +47,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, index = 0 }) => {
           <div className="d-flex align-items-center gap-2 mb-2">
             <span className="badge-modern badge-primary">{product.categoryName}</span>
             <span className="badge-modern badge-success">{product.details?.length || 0} variants</span>
+            {/* Discount badge - placeholder for when discounts are integrated with products */}
+            {/* <span className="badge-modern badge-danger">-15%</span> */}
           </div>
           <h5 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: 8, lineHeight: 1.4, minHeight: 44 }}>
             {product.productName}

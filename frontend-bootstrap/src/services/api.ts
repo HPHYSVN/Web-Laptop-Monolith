@@ -4,6 +4,7 @@ import {
   LoginRequest, RegisterRequest, JwtResponse, CheckoutRequest,
   OrderStatusRequestDTO, UserStatusRequestDTO, ProductFilterDTO,
   CpuInforDTO, RamInforDTO, GpuInforDTO, ScreenInforDTO, StorageInforDTO,
+  DiscountDTO,
 } from '../types';
 
 const API_BASE_URL = 'http://localhost:8080/api';
@@ -88,7 +89,9 @@ export const productService = {
   },
 
   deleteProduct: async (id: number): Promise<void> => {
-    await api.delete(`/products/${id}`);
+    await api.delete(`/products/${id}`, {
+      headers: { 'Content-Type': undefined },
+    });
   },
 };
 
@@ -154,21 +157,98 @@ export const specService = {
     const response = await api.get('/specs/cpu');
     return response.data;
   },
+  createCpu: async (dto: CpuInforDTO): Promise<CpuInforDTO> => {
+    const response = await api.post('/specs/cpu', dto);
+    return response.data;
+  },
+  updateCpu: async (id: number, dto: CpuInforDTO): Promise<CpuInforDTO> => {
+    const response = await api.put(`/specs/cpu/${id}`, dto);
+    return response.data;
+  },
+  deleteCpu: async (id: number): Promise<void> => {
+    await api.delete(`/specs/cpu/${id}`);
+  },
   getAllRams: async (): Promise<RamInforDTO[]> => {
     const response = await api.get('/specs/ram');
     return response.data;
+  },
+  createRam: async (dto: RamInforDTO): Promise<RamInforDTO> => {
+    const response = await api.post('/specs/ram', dto);
+    return response.data;
+  },
+  updateRam: async (id: number, dto: RamInforDTO): Promise<RamInforDTO> => {
+    const response = await api.put(`/specs/ram/${id}`, dto);
+    return response.data;
+  },
+  deleteRam: async (id: number): Promise<void> => {
+    await api.delete(`/specs/ram/${id}`);
   },
   getAllGpus: async (): Promise<GpuInforDTO[]> => {
     const response = await api.get('/specs/gpu');
     return response.data;
   },
+  createGpu: async (dto: GpuInforDTO): Promise<GpuInforDTO> => {
+    const response = await api.post('/specs/gpu', dto);
+    return response.data;
+  },
+  updateGpu: async (id: number, dto: GpuInforDTO): Promise<GpuInforDTO> => {
+    const response = await api.put(`/specs/gpu/${id}`, dto);
+    return response.data;
+  },
+  deleteGpu: async (id: number): Promise<void> => {
+    await api.delete(`/specs/gpu/${id}`);
+  },
   getAllScreens: async (): Promise<ScreenInforDTO[]> => {
     const response = await api.get('/specs/screen');
     return response.data;
   },
+  createScreen: async (dto: ScreenInforDTO): Promise<ScreenInforDTO> => {
+    const response = await api.post('/specs/screen', dto);
+    return response.data;
+  },
+  updateScreen: async (id: number, dto: ScreenInforDTO): Promise<ScreenInforDTO> => {
+    const response = await api.put(`/specs/screen/${id}`, dto);
+    return response.data;
+  },
+  deleteScreen: async (id: number): Promise<void> => {
+    await api.delete(`/specs/screen/${id}`);
+  },
   getAllStorages: async (): Promise<StorageInforDTO[]> => {
     const response = await api.get('/specs/storage');
     return response.data;
+  },
+  createStorage: async (dto: StorageInforDTO): Promise<StorageInforDTO> => {
+    const response = await api.post('/specs/storage', dto);
+    return response.data;
+  },
+  updateStorage: async (id: number, dto: StorageInforDTO): Promise<StorageInforDTO> => {
+    const response = await api.put(`/specs/storage/${id}`, dto);
+    return response.data;
+  },
+  deleteStorage: async (id: number): Promise<void> => {
+    await api.delete(`/specs/storage/${id}`);
+  },
+};
+
+export const discountService = {
+  getAllDiscounts: async (): Promise<DiscountDTO[]> => {
+    const response = await api.get('/discounts');
+    return response.data;
+  },
+  getDiscountById: async (id: number): Promise<DiscountDTO> => {
+    const response = await api.get(`/discounts/${id}`);
+    return response.data;
+  },
+  createDiscount: async (dto: DiscountDTO): Promise<DiscountDTO> => {
+    const response = await api.post('/discounts', dto);
+    return response.data;
+  },
+  updateDiscount: async (id: number, dto: DiscountDTO): Promise<DiscountDTO> => {
+    const response = await api.put(`/discounts/${id}`, dto);
+    return response.data;
+  },
+  deleteDiscount: async (id: number): Promise<void> => {
+    await api.delete(`/discounts/${id}`);
   },
 };
 

@@ -1,15 +1,18 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Laptop, Package, Users, ArrowLeft } from 'lucide-react';
+import { LayoutDashboard, Laptop, Package, Users, ArrowLeft, Percent, Folder, Layers } from 'lucide-react';
 
 const AdminSidebar: React.FC = () => {
   const location = useLocation();
 
   const navItems = [
     { to: '/admin', label: 'Dashboard', icon: LayoutDashboard },
+    { to: '/admin/categories', label: 'Categories', icon: Folder },
     { to: '/admin/products', label: 'Products', icon: Laptop },
+    { to: '/admin/specs', label: 'Specs', icon: Layers },
     { to: '/admin/orders', label: 'Orders', icon: Package },
     { to: '/admin/users', label: 'Users', icon: Users },
+    { to: '/admin/discounts', label: 'Discounts', icon: Percent },
   ];
 
   return (

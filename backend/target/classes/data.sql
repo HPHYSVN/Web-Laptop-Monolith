@@ -84,7 +84,14 @@ INSERT IGNORE INTO orders (id, user_id, order_date, status, total_price, receive
 (3, 2, '2026-05-05 09:15:00', 'PENDING', 16490000, 'Khách hàng 1', 'Hà Nội', '0987654321'),
 (4, 3, '2026-05-06 16:00:00', 'CANCELLED', 21990000, 'Khách hàng 2', 'Đà Nẵng', '0912345678');
 
--- 8. COMMENTS
+-- 8. DISCOUNTS
+INSERT IGNORE INTO discounts (id, code, discount_percent, max_percent, start_date, end_date, description, quantity) VALUES 
+(1, 'SUMMER2024', 10.0, 20.0, '2024-06-01 00:00:00', '2024-08-31 23:59:59', 'Khuyến mãi mùa hè giảm 10%', 100),
+(2, 'NEWUSER', 15.0, 15.0, '2024-01-01 00:00:00', '2024-12-31 23:59:59', 'Khuyến mãi người dùng mới giảm 15%', 50),
+(3, 'FLASHSALE', 20.0, 25.0, '2024-05-01 00:00:00', '2024-05-31 23:59:59', 'Flash sale tháng 5 giảm 20%', 30),
+(4, 'YEAR2025', 5.0, 10.0, '2025-01-01 00:00:00', '2025-12-31 23:59:59', 'Khuyến mãi năm 2025 giảm 5%', 200);
+
+-- 9. COMMENTS
 INSERT IGNORE INTO comments (user_id, product_id, content, date) VALUES 
 (2, 1, 'Máy chạy rất mượt, chiến game AAA đỉnh cao!', NOW()),
 (3, 2, 'Màn hình quá đẹp, đáng đồng tiền bát gạo.', NOW()),

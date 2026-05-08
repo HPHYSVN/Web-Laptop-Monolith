@@ -1,3 +1,4 @@
+com/laptop/laptopstore/services/DiscountService.class
 com/laptop/laptopstore/dtos/OrderDTO.class
 com/laptop/laptopstore/models/Category$CategoryBuilder.class
 com/laptop/laptopstore/models/Order$OrderBuilder.class
@@ -29,6 +30,7 @@ com/laptop/laptopstore/dtos/ProductSpecsRequestDTO.class
 com/laptop/laptopstore/repositories/OrderRepository.class
 com/laptop/laptopstore/dtos/DashboardDTO$DashboardDTOBuilder.class
 com/laptop/laptopstore/dtos/CategoryDTO.class
+com/laptop/laptopstore/controllers/DiscountController.class
 com/laptop/laptopstore/dtos/ProductFilterDTO.class
 com/laptop/laptopstore/services/ProductService.class
 com/laptop/laptopstore/models/ProductDetail.class
@@ -59,6 +61,7 @@ com/laptop/laptopstore/security/CustomUserDetailsService.class
 com/laptop/laptopstore/models/Message.class
 com/laptop/laptopstore/dtos/ProductDTO$ProductDTOBuilder.class
 com/laptop/laptopstore/repositories/CpuInforRepository.class
+com/laptop/laptopstore/dtos/DiscountDTO.class
 com/laptop/laptopstore/controllers/DashboardController.class
 com/laptop/laptopstore/controllers/CartController.class
 com/laptop/laptopstore/security/SecurityConfig.class
