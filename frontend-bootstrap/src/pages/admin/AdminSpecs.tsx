@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { Container, Spinner, Button } from 'reactstrap';
+import React, { useCallback, useState, useEffect } from 'react';
+import { Spinner } from 'reactstrap';
 import { Plus, Pencil, Trash2, Cpu, HardDrive, Monitor, Zap, Layers } from 'lucide-react';
 import { CpuInforDTO, RamInforDTO, GpuInforDTO, ScreenInforDTO, StorageInforDTO } from '../../types';
 import { specService } from '../../services/api';
+import { useTranslation } from 'react-i18next';
 
 type SpecType = 'cpu' | 'ram' | 'gpu' | 'screen' | 'storage';
+const PAGE_SIZE = 10;
 
 const AdminSpecs: React.FC = () => {
   const [activeTab, setActiveTab] = useState<SpecType>('cpu');
@@ -12,6 +14,8 @@ const AdminSpecs: React.FC = () => {
   const [error, setError] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
+  const [pageByTab, setPageByTab] = useState<Record<SpecType, number>>({ cpu: 0, ram: 0, gpu: 0, screen: 0, storage: 0 });
+  const { t } = useTranslation();
 
   const [cpus, setCpus] = useState<CpuInforDTO[]>([]);
   const [rams, setRams] = useState<RamInforDTO[]>([]);
@@ -21,11 +25,7 @@ const AdminSpecs: React.FC = () => {
 
   const [form, setForm] = useState<any>({});
 
-  useEffect(() => {
-    fetchAllSpecs();
-  }, []);
-
-  const fetchAllSpecs = async () => {
+  const fetchAllSpecs = useCallback(async () => {
     try {
       setLoading(true);
       const [cpuData, ramData, gpuData, screenData, storageData] = await Promise.all([
@@ -41,11 +41,15 @@ const AdminSpecs: React.FC = () => {
       setScreens(screenData);
       setStorages(storageData);
     } catch {
-      setError('Failed to load specs.');
+      setError(t('messages.loadError'));
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
+
+  useEffect(() => {
+    fetchAllSpecs();
+  }, [fetchAllSpecs]);
 
   const handleDelete = async (type: SpecType, id: number) => {
     if (!window.confirm('Are you sure you want to delete this item?')) return;
@@ -120,6 +124,11 @@ const AdminSpecs: React.FC = () => {
   };
 
   const renderTable = (type: SpecType, data: any[]) => {
+    const page = pageByTab[type] || 0;
+    const totalPages = Math.max(Math.ceil(data.length / PAGE_SIZE), 1);
+    const pageData = data.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
+    const setTabPage = (nextPage: number) => setPageByTab((prev) => ({ ...prev, [type]: nextPage }));
+
     return (
       <div className="table-modern-container">
         <div style={{ overflowX: 'auto' }}>
@@ -167,7 +176,7 @@ const AdminSpecs: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {data.map((item) => (
+              {pageData.map((item) => (
                 <tr key={item.id}>
                   <td style={{ color: 'var(--text-muted)', fontWeight: 500 }}>#{item.id}</td>
                   {type === 'cpu' && (
@@ -248,6 +257,14 @@ const AdminSpecs: React.FC = () => {
               ))}
             </tbody>
           </table>
+        </div>
+        <div className="d-flex align-items-center justify-content-between p-3">
+          <span style={{ color: 'var(--text-secondary)' }}>{data.length} {type.toUpperCase()}</span>
+          <div className="d-flex gap-2 align-items-center">
+            <button className="btn-secondary-modern" disabled={page === 0} onClick={() => setTabPage(Math.max(0, page - 1))}>{t('common.previous')}</button>
+            <span>{page + 1} / {totalPages}</span>
+            <button className="btn-secondary-modern" disabled={page + 1 >= totalPages} onClick={() => setTabPage(page + 1)}>{t('common.next')}</button>
+          </div>
         </div>
       </div>
     );
@@ -396,15 +413,15 @@ const AdminSpecs: React.FC = () => {
             <Layers size={22} />
           </div>
           <div>
-            <h2 style={{ marginBottom: 2 }}>Manage Specs</h2>
+            <h2 style={{ marginBottom: 2 }}>{t('adminExtra.manageSpecs')}</h2>
             <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: '0.875rem' }}>
-              CPU, RAM, GPU, Screen, Storage specifications
+              {t('adminExtra.specsSubtitle')}
             </p>
           </div>
         </div>
         <button className="btn-primary-modern" onClick={() => openCreate(activeTab)}>
           <Plus size={18} style={{ marginRight: 8 }} />
-          Add {activeTab.toUpperCase()}
+          {t('forms.add')} {activeTab.toUpperCase()}
         </button>
       </div>
 
@@ -465,7 +482,7 @@ const AdminSpecs: React.FC = () => {
           <div className="modal-modern" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 500, maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ padding: '24px 24px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <h4 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700 }}>
-                {editingItem ? `Edit ${activeTab.toUpperCase()}` : `Add ${activeTab.toUpperCase()}`}
+                {editingItem ? `${t('forms.edit')} ${activeTab.toUpperCase()}` : `${t('forms.add')} ${activeTab.toUpperCase()}`}
               </h4>
               <button
                 onClick={() => setModalOpen(false)}
@@ -521,14 +538,14 @@ const AdminSpecs: React.FC = () => {
                   onClick={() => setModalOpen(false)}
                   style={{ padding: '10px 20px' }}
                 >
-                  Cancel
+                  {t('forms.cancel')}
                 </button>
                 <button
                   type="submit"
                   className="btn-primary-modern"
                   style={{ padding: '10px 24px' }}
                 >
-                  {editingItem ? 'Update' : 'Create'}
+                  {editingItem ? t('forms.update') : t('forms.create')}
                 </button>
               </div>
             </form>

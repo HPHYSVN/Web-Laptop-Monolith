@@ -105,6 +105,26 @@ export interface DashboardDTO {
   totalProducts: number;
 }
 
+export interface PageResponseDTO<T> {
+  content: T[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  first: boolean;
+  last: boolean;
+}
+
+export interface LabelValueDTO {
+  label: string;
+  value: number;
+}
+
+export interface MonthlyRevenueDTO {
+  month: string;
+  revenue: number;
+}
+
 export interface CartItem {
   id: number;
   productDetailId: number;
@@ -154,6 +174,8 @@ export interface ProductFilterDTO {
   minPrice?: number;
   maxPrice?: number;
   keyword?: string;
+  page?: number;
+  size?: number;
   sortBy?: string; // "price", "discount"
   sortOrder?: string; // "asc", "desc"
 }

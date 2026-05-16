@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import { JwtResponse, UserDTO } from '../types';
-import { authService } from '../services/api';
+import { JwtResponse } from '../types';
+import { authService, cartService } from '../services/api';
+import { toast } from 'react-toastify';
 
 interface AuthContextType {
   user: JwtResponse | null;
@@ -15,6 +16,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const STORAGE_KEY = 'laptop_auth';
+const GUEST_CART_KEY = 'laptop_guest_cart';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<JwtResponse | null>(() => {
@@ -24,7 +26,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(false);
 
   const isAuthenticated = !!user;
-  const isAdmin = user?.role === 'ADMIN';
+  const isAdmin = user?.role === 'ADMIN' || user?.role === 'ROLE_ADMIN';
 
   const login = useCallback(async (username: string, password: string) => {
     setLoading(true);
@@ -32,6 +34,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const response = await authService.login({ username, password });
       setUser(response);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(response));
+      const guestCart = JSON.parse(localStorage.getItem(GUEST_CART_KEY) || '[]');
+      if (Array.isArray(guestCart) && guestCart.length > 0) {
+        await cartService.mergeCart(response.id, guestCart);
+        localStorage.removeItem(GUEST_CART_KEY);
+        window.dispatchEvent(new Event('guest-cart-synced'));
+        toast.success('Guest cart synced');
+      }
     } finally {
       setLoading(false);
     }

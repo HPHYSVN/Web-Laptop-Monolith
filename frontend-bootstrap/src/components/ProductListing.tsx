@@ -1,88 +1,74 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { Search, SlidersHorizontal, X } from 'lucide-react';
-import {
-  Container, Row, Col, Spinner, Alert,
-} from 'reactstrap';
-import { ProductDTO, CategoryDTO, ProductFilterDTO } from '../types';
+import { Container, Row, Col, Spinner } from 'reactstrap';
+import { ProductDTO, CategoryDTO } from '../types';
 import { productService, categoryService } from '../services/api';
 import ProductCard from './ProductCard';
 import PageWrapper from './PageWrapper';
+import { useTranslation } from 'react-i18next';
+
+const PAGE_SIZE = 12;
 
 const ProductListing: React.FC = () => {
   const [products, setProducts] = useState<ProductDTO[]>([]);
   const [categories, setCategories] = useState<CategoryDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [page, setPage] = useState(0);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [sortBy, setSortBy] = useState<string>('price');
   const [sortOrder, setSortOrder] = useState<string>('asc');
+  const { t } = useTranslation();
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const [productsData, categoriesData] = await Promise.all([
-          productService.getAllProducts(),
-          categoryService.getAllCategories(),
-        ]);
-        setProducts(productsData);
-        setCategories(categoriesData);
-      } catch {
-        setError('Failed to fetch products. Please try again later.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
-
-  useEffect(() => {
-    const fetchByCategory = async () => {
-      if (!selectedCategory) {
-        const data = await productService.getAllProducts();
-        setProducts(data);
-        return;
-      }
-      try {
-        setLoading(true);
-        const data = await productService.getProductsByCategory(selectedCategory);
-        setProducts(data);
-      } catch {
-        setError('Failed to fetch products.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchByCategory();
-  }, [selectedCategory]);
-
-  const handleSearch = async () => {
-    await applyFilters();
-  };
-
-  const applyFilters = async () => {
+  const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
-      const filter: ProductFilterDTO = {
+      const data = await productService.getProductsPage({
+        page,
+        size: PAGE_SIZE,
         keyword: searchTerm || undefined,
         categoryId: selectedCategory || undefined,
         minPrice: minPrice ? parseFloat(minPrice) : undefined,
         maxPrice: maxPrice ? parseFloat(maxPrice) : undefined,
         sortBy,
         sortOrder,
-      };
-      const data = await productService.filterProducts(filter);
-      setProducts(data);
+      });
+      setProducts(data.content);
+      setTotal(data.totalElements);
+      setTotalPages(Math.max(data.totalPages, 1));
+      setError('');
     } catch {
-      setError('Filter failed.');
+      setError(t('messages.loadError'));
     } finally {
       setLoading(false);
     }
+  }, [page, searchTerm, selectedCategory, minPrice, maxPrice, sortBy, sortOrder, t]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const categoriesData = await categoryService.getAllCategories();
+        setCategories(categoriesData);
+      } catch {
+        setError(t('messages.loadError'));
+      }
+    };
+
+    fetchData();
+  }, [t]);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
+
+  const handleSearch = async () => {
+    setPage(0);
+    await fetchProducts();
   };
 
   const handleReset = () => {
@@ -92,7 +78,7 @@ const ProductListing: React.FC = () => {
     setSelectedCategory(null);
     setSortBy('price');
     setSortOrder('asc');
-    applyFilters();
+    setPage(0);
   };
 
   return (
@@ -101,9 +87,9 @@ const ProductListing: React.FC = () => {
         {/* Header */}
         <div className="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4">
           <div>
-            <h2>Products</h2>
+            <h2>{t('public.products')}</h2>
             <p style={{ color: 'var(--text-secondary)', margin: 0 }}>
-              {products.length} {products.length === 1 ? 'product' : 'products'} available
+              {total} {total === 1 ? t('public.product') : t('public.productsCount')} {t('public.available')}
             </p>
           </div>
           <div className="d-flex align-items-center gap-2" style={{ maxWidth: 400, width: '100%' }}>
@@ -111,9 +97,9 @@ const ProductListing: React.FC = () => {
               <Search size={18} color="var(--text-muted)" />
               <input
                 type="text"
-                placeholder="Search laptops..."
+                placeholder={t('public.search')}
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => { setPage(0); setSearchTerm(e.target.value); }}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                 className="input-modern"
                 style={{ border: 'none', padding: 0, boxShadow: 'none', background: 'transparent' }}
@@ -137,29 +123,29 @@ const ProductListing: React.FC = () => {
             >
               <div className="d-flex align-items-center gap-2 mb-3">
                 <SlidersHorizontal size={18} color="var(--primary)" />
-                <h6 style={{ margin: 0, fontSize: '0.9375rem', fontWeight: 600 }}>Filters</h6>
+                <h6 style={{ margin: 0, fontSize: '0.9375rem', fontWeight: 600 }}>{t('public.filters')}</h6>
               </div>
               
               {/* Price Filter */}
               <div style={{ marginBottom: 16 }}>
                 <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: 8, color: 'var(--text-main)' }}>
-                  Price Range (VND)
+                  {t('public.priceRange')}
                 </label>
                 <div className="d-flex gap-2 align-items-center">
                   <input
                     type="number"
-                    placeholder="Min"
+                    placeholder={t('public.min')}
                     value={minPrice}
-                    onChange={(e) => setMinPrice(e.target.value)}
+                    onChange={(e) => { setPage(0); setMinPrice(e.target.value); }}
                     className="input-modern"
                     style={{ fontSize: '0.8125rem', padding: '8px 12px' }}
                   />
                   <span style={{ color: 'var(--text-muted)' }}>-</span>
                   <input
                     type="number"
-                    placeholder="Max"
+                    placeholder={t('public.max')}
                     value={maxPrice}
-                    onChange={(e) => setMaxPrice(e.target.value)}
+                    onChange={(e) => { setPage(0); setMaxPrice(e.target.value); }}
                     className="input-modern"
                     style={{ fontSize: '0.8125rem', padding: '8px 12px' }}
                   />
@@ -169,32 +155,33 @@ const ProductListing: React.FC = () => {
               {/* Sort */}
               <div style={{ marginBottom: 16 }}>
                 <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: 8, color: 'var(--text-main)' }}>
-                  Sort By
+                  {t('public.sortBy')}
                 </label>
                 <select
                   value={`${sortBy}-${sortOrder}`}
                   onChange={(e) => {
                     const [sort, order] = e.target.value.split('-');
+                    setPage(0);
                     setSortBy(sort);
                     setSortOrder(order);
                   }}
                   className="input-modern select-modern"
                   style={{ fontSize: '0.8125rem', padding: '8px 12px' }}
                 >
-                  <option value="price-asc">Price: Low to High</option>
-                  <option value="price-desc">Price: High to Low</option>
-                  <option value="discount-asc">Discount: Low to High</option>
-                  <option value="discount-desc">Discount: High to Low</option>
+                  <option value="price-asc">Giá: thấp đến cao</option>
+                  <option value="price-desc">Giá: cao đến thấp</option>
+                  <option value="discount-asc">Khuyến mãi: thấp đến cao</option>
+                  <option value="discount-desc">Khuyến mãi: cao đến thấp</option>
                 </select>
               </div>
 
               <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--border-light)' }}>
                 <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: 8, color: 'var(--text-main)' }}>
-                  Categories
+                  {t('productsAdmin.category')}
                 </label>
                 <div className="d-flex flex-column gap-1">
                   <button
-                    onClick={() => setSelectedCategory(null)}
+                    onClick={() => { setPage(0); setSelectedCategory(null); }}
                     style={{
                       padding: '8px 12px',
                       borderRadius: 'var(--radius-md)',
@@ -209,12 +196,12 @@ const ProductListing: React.FC = () => {
                       boxShadow: selectedCategory === null ? 'var(--shadow-sm)' : 'none',
                     }}
                   >
-                    All Categories
+                    {t('public.allCategories')}
                   </button>
                   {categories.map((cat) => (
                     <button
                       key={cat.id}
-                      onClick={() => setSelectedCategory(cat.id as number)}
+                      onClick={() => { setPage(0); setSelectedCategory(cat.id as number); }}
                       style={{
                         padding: '8px 12px',
                         borderRadius: 'var(--radius-md)',
@@ -242,7 +229,7 @@ const ProductListing: React.FC = () => {
             {loading ? (
               <div className="d-flex flex-column align-items-center gap-3 py-5">
                 <Spinner color="primary" />
-                <p style={{ color: 'var(--text-secondary)' }}>Loading products...</p>
+                <p style={{ color: 'var(--text-secondary)' }}>{t('public.loadingProducts')}</p>
               </div>
             ) : error ? (
               <div
@@ -253,16 +240,23 @@ const ProductListing: React.FC = () => {
               </div>
             ) : products.length === 0 ? (
               <div className="card-modern" style={{ padding: 48, textAlign: 'center' }}>
-                <p style={{ color: 'var(--text-muted)', margin: 0 }}>No products found.</p>
+                <p style={{ color: 'var(--text-muted)', margin: 0 }}>{t('public.noProducts')}</p>
               </div>
             ) : (
-              <Row className="g-4">
-                {products.map((product, i) => (
-                  <Col key={product.id} xs={12} sm={6} md={4} lg={3}>
-                    <ProductCard product={product} index={i} />
-                  </Col>
-                ))}
-              </Row>
+              <>
+                <Row className="g-4">
+                  {products.map((product, i) => (
+                    <Col key={product.id} xs={12} sm={6} md={4} lg={3}>
+                      <ProductCard product={product} index={i} />
+                    </Col>
+                  ))}
+                </Row>
+                <div className="d-flex align-items-center justify-content-center gap-2 mt-4">
+                  <button className="btn-secondary-modern" disabled={page === 0} onClick={() => setPage((p) => Math.max(0, p - 1))}>{t('common.previous')}</button>
+                  <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>{page + 1} / {totalPages}</span>
+                  <button className="btn-secondary-modern" disabled={page + 1 >= totalPages} onClick={() => setPage((p) => p + 1)}>{t('common.next')}</button>
+                </div>
+              </>
             )}
           </Col>
         </Row>

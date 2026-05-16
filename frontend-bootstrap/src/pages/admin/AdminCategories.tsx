@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Spinner } from 'reactstrap';
+import { Spinner } from 'reactstrap';
 import { Plus, Pencil, Trash2, Folder } from 'lucide-react';
 import { CategoryDTO } from '../../types';
 import { categoryService } from '../../services/api';
+import { useTranslation } from 'react-i18next';
+
+const PAGE_SIZE = 10;
 
 const AdminCategories: React.FC = () => {
   const [categories, setCategories] = useState<CategoryDTO[]>([]);
@@ -10,6 +13,8 @@ const AdminCategories: React.FC = () => {
   const [error, setError] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<CategoryDTO | null>(null);
+  const [page, setPage] = useState(0);
+  const { t } = useTranslation();
 
   const [form, setForm] = useState({
     categoryName: '',
@@ -22,14 +27,17 @@ const AdminCategories: React.FC = () => {
         const data = await categoryService.getAllCategories();
         setCategories(data);
       } catch {
-        setError('Failed to load categories.');
+        setError(t('messages.loadError'));
       } finally {
         setLoading(false);
       }
     };
 
     fetchCategories();
-  }, []);
+  }, [t]);
+
+  const totalPages = Math.max(Math.ceil(categories.length / PAGE_SIZE), 1);
+  const paginatedCategories = categories.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
 
   const handleDelete = async (id: number) => {
     if (!window.confirm('Are you sure you want to delete this category?')) return;
@@ -97,15 +105,15 @@ const AdminCategories: React.FC = () => {
             <Folder size={22} />
           </div>
           <div>
-            <h2 style={{ marginBottom: 2 }}>Manage Categories</h2>
+          <h2 style={{ marginBottom: 2 }}>{t('adminExtra.manageCategories')}</h2>
             <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: '0.875rem' }}>
-              {categories.length} categories available
+              {t('adminExtra.categoriesCount', { count: categories.length })}
             </p>
           </div>
         </div>
         <button className="btn-primary-modern" onClick={openCreate}>
           <Plus size={18} style={{ marginRight: 8 }} />
-          Add Category
+          {t('adminExtra.addCategory')}
         </button>
       </div>
 
@@ -124,13 +132,13 @@ const AdminCategories: React.FC = () => {
               <thead>
                 <tr>
                   <th>ID</th>
-                  <th>Category Name</th>
-                  <th>Description</th>
-                  <th>Actions</th>
+                  <th>{t('adminExtra.categoryName')}</th>
+                  <th>{t('forms.description')}</th>
+                  <th>{t('common.actions')}</th>
                 </tr>
               </thead>
               <tbody>
-                {categories.map((category) => (
+                {paginatedCategories.map((category) => (
                   <tr key={category.id}>
                     <td style={{ color: 'var(--text-muted)', fontWeight: 500 }}>#{category.id}</td>
                     <td style={{ fontWeight: 600, color: 'var(--primary)' }}>{category.categoryName}</td>
@@ -186,6 +194,14 @@ const AdminCategories: React.FC = () => {
               </tbody>
             </table>
           </div>
+          <div className="d-flex align-items-center justify-content-between p-3">
+            <span style={{ color: 'var(--text-secondary)' }}>{categories.length} {t('admin.categories')}</span>
+            <div className="d-flex gap-2 align-items-center">
+              <button className="btn-secondary-modern" disabled={page === 0} onClick={() => setPage((p) => Math.max(0, p - 1))}>{t('common.previous')}</button>
+              <span>{page + 1} / {totalPages}</span>
+              <button className="btn-secondary-modern" disabled={page + 1 >= totalPages} onClick={() => setPage((p) => p + 1)}>{t('common.next')}</button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -195,7 +211,7 @@ const AdminCategories: React.FC = () => {
           <div className="modal-modern" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 500 }}>
             <div style={{ padding: '24px 24px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <h4 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700 }}>
-                {editingCategory ? 'Edit Category' : 'Add Category'}
+                {editingCategory ? `${t('forms.edit')} ${t('admin.categories')}` : t('adminExtra.addCategory')}
               </h4>
               <button
                 onClick={() => setModalOpen(false)}
@@ -236,7 +252,7 @@ const AdminCategories: React.FC = () => {
 
                 <div style={{ marginBottom: 16 }}>
                   <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: 6, color: 'var(--text-main)' }}>
-                    Category Name *
+                    {t('adminExtra.categoryName')} *
                   </label>
                   <input
                     type="text"
@@ -249,7 +265,7 @@ const AdminCategories: React.FC = () => {
 
                 <div style={{ marginBottom: 16 }}>
                   <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: 6, color: 'var(--text-main)' }}>
-                    Description
+                    {t('forms.description')}
                   </label>
                   <textarea
                     value={form.categoryDescription}
@@ -275,14 +291,14 @@ const AdminCategories: React.FC = () => {
                   onClick={() => setModalOpen(false)}
                   style={{ padding: '10px 20px' }}
                 >
-                  Cancel
+                  {t('forms.cancel')}
                 </button>
                 <button
                   type="submit"
                   className="btn-primary-modern"
                   style={{ padding: '10px 24px' }}
                 >
-                  {editingCategory ? 'Update' : 'Create'}
+                  {editingCategory ? t('forms.update') : t('forms.create')}
                 </button>
               </div>
             </form>

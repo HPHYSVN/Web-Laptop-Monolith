@@ -4,7 +4,7 @@ import {
   LoginRequest, RegisterRequest, JwtResponse, CheckoutRequest,
   OrderStatusRequestDTO, UserStatusRequestDTO, ProductFilterDTO,
   CpuInforDTO, RamInforDTO, GpuInforDTO, ScreenInforDTO, StorageInforDTO,
-  DiscountDTO,
+  DiscountDTO, PageResponseDTO, MonthlyRevenueDTO, LabelValueDTO, CartItem,
 } from '../types';
 
 const API_BASE_URL = 'http://localhost:8080/api';
@@ -78,6 +78,11 @@ export const productService = {
     return response.data;
   },
 
+  getProductsPage: async (filter: ProductFilterDTO): Promise<PageResponseDTO<ProductDTO>> => {
+    const response = await api.get('/products', { params: filter });
+    return response.data;
+  },
+
   createProduct: async (data: any): Promise<ProductDTO> => {
     const response = await api.post('/products', data);
     return response.data;
@@ -92,6 +97,27 @@ export const productService = {
     await api.delete(`/products/${id}`, {
       headers: { 'Content-Type': undefined },
     });
+  },
+
+  bulkDeleteProducts: async (ids: number[]): Promise<void> => {
+    await api.delete('/products/bulk', { data: { ids } });
+  },
+
+  importProducts: async (file: File): Promise<{ imported: number; message: string }> => {
+    const form = new FormData();
+    form.append('file', file);
+    const response = await api.post('/products/import', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+
+  exportProducts: async (format: 'csv' | 'xlsx'): Promise<Blob> => {
+    const response = await api.get('/products/export', {
+      params: { format },
+      responseType: 'blob',
+    });
+    return response.data;
   },
 };
 
@@ -127,9 +153,18 @@ export const orderService = {
     return response.data;
   },
 
+  getOrdersPage: async (params: { page: number; size: number; keyword?: string; status?: string }): Promise<PageResponseDTO<OrderDTO>> => {
+    const response = await api.get('/orders', { params });
+    return response.data;
+  },
+
   updateOrderStatus: async (id: number, status: string): Promise<OrderDTO> => {
     const response = await api.put(`/orders/${id}/status`, { status } as OrderStatusRequestDTO);
     return response.data;
+  },
+
+  bulkDeleteOrders: async (ids: number[]): Promise<void> => {
+    await api.delete('/orders/bulk', { data: { ids } });
   },
 };
 
@@ -139,15 +174,52 @@ export const userService = {
     return response.data;
   },
 
+  getUsersPage: async (params: { page: number; size: number; keyword?: string; status?: string; role?: string }): Promise<PageResponseDTO<UserDTO>> => {
+    const response = await api.get('/users', { params });
+    return response.data;
+  },
+
   updateUserStatus: async (id: number, status: string): Promise<UserDTO> => {
     const response = await api.put(`/users/${id}/status`, { status } as UserStatusRequestDTO);
     return response.data;
+  },
+
+  bulkDeleteUsers: async (ids: number[]): Promise<void> => {
+    await api.delete('/users/bulk', { data: { ids } });
   },
 };
 
 export const adminService = {
   getDashboardStats: async (): Promise<DashboardDTO> => {
     const response = await api.get('/admin/dashboard');
+    return response.data;
+  },
+
+  getMonthlyRevenue: async (): Promise<MonthlyRevenueDTO[]> => {
+    const response = await api.get('/admin/dashboard/revenue-monthly');
+    return response.data;
+  },
+
+  getOrderStatusStats: async (): Promise<LabelValueDTO[]> => {
+    const response = await api.get('/admin/dashboard/order-status');
+    return response.data;
+  },
+
+  getCategoryShare: async (): Promise<LabelValueDTO[]> => {
+    const response = await api.get('/admin/dashboard/category-share');
+    return response.data;
+  },
+};
+
+export const cartService = {
+  mergeCart: async (userId: number, items: CartItem[]): Promise<any> => {
+    const response = await api.post('/carts/merge', {
+      userId,
+      items: items.map((item) => ({
+        productDetailId: item.productDetailId,
+        quantity: item.quantity,
+      })),
+    });
     return response.data;
   },
 };

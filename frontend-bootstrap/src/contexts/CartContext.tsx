@@ -26,6 +26,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
   }, [items]);
 
+  useEffect(() => {
+    const handleSynced = () => setItems([]);
+    window.addEventListener('guest-cart-synced', handleSynced);
+    return () => window.removeEventListener('guest-cart-synced', handleSynced);
+  }, []);
+
   const addItem = useCallback((item: CartItem) => {
     setItems((prev) => {
       const existing = prev.find((i) => i.productDetailId === item.productDetailId);

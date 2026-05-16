@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Spinner } from 'reactstrap';
+import { Spinner } from 'reactstrap';
 import { Plus, Pencil, Trash2, Percent } from 'lucide-react';
 import { DiscountDTO } from '../../types';
 import { discountService } from '../../services/api';
+import { useTranslation } from 'react-i18next';
+
+const PAGE_SIZE = 10;
 
 const statusBg: Record<string, string> = {
   ACTIVE: '#ECFDF5',
@@ -22,6 +25,8 @@ const AdminDiscounts: React.FC = () => {
   const [error, setError] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingDiscount, setEditingDiscount] = useState<DiscountDTO | null>(null);
+  const [page, setPage] = useState(0);
+  const { t } = useTranslation();
 
   const [form, setForm] = useState({
     code: '',
@@ -39,14 +44,17 @@ const AdminDiscounts: React.FC = () => {
         const data = await discountService.getAllDiscounts();
         setDiscounts(data);
       } catch {
-        setError('Failed to load discounts.');
+        setError(t('messages.loadError'));
       } finally {
         setLoading(false);
       }
     };
 
     fetchDiscounts();
-  }, []);
+  }, [t]);
+
+  const totalPages = Math.max(Math.ceil(discounts.length / PAGE_SIZE), 1);
+  const paginatedDiscounts = discounts.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
 
   const handleDelete = async (id: number) => {
     if (!window.confirm('Are you sure you want to delete this discount?')) return;
@@ -130,15 +138,15 @@ const AdminDiscounts: React.FC = () => {
             <Percent size={22} />
           </div>
           <div>
-            <h2 style={{ marginBottom: 2 }}>Manage Discounts</h2>
+            <h2 style={{ marginBottom: 2 }}>{t('adminExtra.manageDiscounts')}</h2>
             <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: '0.875rem' }}>
-              {discounts.length} discount codes available
+              {t('adminExtra.discountsCount', { count: discounts.length })}
             </p>
           </div>
         </div>
         <button className="btn-primary-modern" onClick={openCreate}>
           <Plus size={18} style={{ marginRight: 8 }} />
-          Add Discount
+          {t('adminExtra.addDiscount')}
         </button>
       </div>
 
@@ -157,18 +165,18 @@ const AdminDiscounts: React.FC = () => {
               <thead>
                 <tr>
                   <th>ID</th>
-                  <th>Code</th>
-                  <th>Discount %</th>
-                  <th>Max %</th>
-                  <th>Start Date</th>
-                  <th>End Date</th>
-                  <th>Quantity</th>
-                  <th>Status</th>
-                  <th>Actions</th>
+                  <th>{t('forms.code')}</th>
+                  <th>{t('adminExtra.discountPercent')}</th>
+                  <th>{t('adminExtra.maxPercent')}</th>
+                  <th>{t('forms.startDate')}</th>
+                  <th>{t('forms.endDate')}</th>
+                  <th>{t('forms.quantity')}</th>
+                  <th>{t('common.status')}</th>
+                  <th>{t('common.actions')}</th>
                 </tr>
               </thead>
               <tbody>
-                {discounts.map((discount) => (
+                {paginatedDiscounts.map((discount) => (
                   <tr key={discount.id}>
                     <td style={{ color: 'var(--text-muted)', fontWeight: 500 }}>#{discount.id}</td>
                     <td style={{ fontWeight: 600, color: 'var(--primary)' }}>{discount.code}</td>
@@ -241,6 +249,14 @@ const AdminDiscounts: React.FC = () => {
               </tbody>
             </table>
           </div>
+          <div className="d-flex align-items-center justify-content-between p-3">
+            <span style={{ color: 'var(--text-secondary)' }}>{discounts.length} {t('admin.discounts')}</span>
+            <div className="d-flex gap-2 align-items-center">
+              <button className="btn-secondary-modern" disabled={page === 0} onClick={() => setPage((p) => Math.max(0, p - 1))}>{t('common.previous')}</button>
+              <span>{page + 1} / {totalPages}</span>
+              <button className="btn-secondary-modern" disabled={page + 1 >= totalPages} onClick={() => setPage((p) => p + 1)}>{t('common.next')}</button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -250,7 +266,7 @@ const AdminDiscounts: React.FC = () => {
           <div className="modal-modern" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 500 }}>
             <div style={{ padding: '24px 24px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <h4 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700 }}>
-                {editingDiscount ? 'Edit Discount' : 'Add Discount'}
+                {editingDiscount ? `${t('forms.edit')} ${t('admin.discounts')}` : t('adminExtra.addDiscount')}
               </h4>
               <button
                 onClick={() => setModalOpen(false)}
@@ -291,7 +307,7 @@ const AdminDiscounts: React.FC = () => {
 
                 <div style={{ marginBottom: 16 }}>
                   <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: 6, color: 'var(--text-main)' }}>
-                    Code *
+                    {t('forms.code')} *
                   </label>
                   <input
                     type="text"
@@ -305,7 +321,7 @@ const AdminDiscounts: React.FC = () => {
 
                 <div style={{ marginBottom: 16 }}>
                   <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: 6, color: 'var(--text-main)' }}>
-                    Discount Percent (%)
+                    {t('adminExtra.discountPercent')}
                   </label>
                   <input
                     type="number"
@@ -320,7 +336,7 @@ const AdminDiscounts: React.FC = () => {
 
                 <div style={{ marginBottom: 16 }}>
                   <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: 6, color: 'var(--text-main)' }}>
-                    Max Percent (%)
+                    {t('adminExtra.maxPercent')}
                   </label>
                   <input
                     type="number"
@@ -335,7 +351,7 @@ const AdminDiscounts: React.FC = () => {
 
                 <div style={{ marginBottom: 16 }}>
                   <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: 6, color: 'var(--text-main)' }}>
-                    Start Date *
+                    {t('forms.startDate')} *
                   </label>
                   <input
                     type="date"
@@ -348,7 +364,7 @@ const AdminDiscounts: React.FC = () => {
 
                 <div style={{ marginBottom: 16 }}>
                   <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: 6, color: 'var(--text-main)' }}>
-                    End Date *
+                    {t('forms.endDate')} *
                   </label>
                   <input
                     type="date"
@@ -361,7 +377,7 @@ const AdminDiscounts: React.FC = () => {
 
                 <div style={{ marginBottom: 16 }}>
                   <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: 6, color: 'var(--text-main)' }}>
-                    Quantity
+                    {t('forms.quantity')}
                   </label>
                   <input
                     type="number"
@@ -374,7 +390,7 @@ const AdminDiscounts: React.FC = () => {
 
                 <div style={{ marginBottom: 16 }}>
                   <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: 6, color: 'var(--text-main)' }}>
-                    Description
+                    {t('forms.description')}
                   </label>
                   <textarea
                     value={form.description}
@@ -400,14 +416,14 @@ const AdminDiscounts: React.FC = () => {
                   onClick={() => setModalOpen(false)}
                   style={{ padding: '10px 20px' }}
                 >
-                  Cancel
+                  {t('forms.cancel')}
                 </button>
                 <button
                   type="submit"
                   className="btn-primary-modern"
                   style={{ padding: '10px 24px' }}
                 >
-                  {editingDiscount ? 'Update' : 'Create'}
+                  {editingDiscount ? t('forms.update') : t('forms.create')}
                 </button>
               </div>
             </form>
