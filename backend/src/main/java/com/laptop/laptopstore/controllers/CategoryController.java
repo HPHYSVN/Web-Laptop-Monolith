@@ -2,6 +2,7 @@ package com.laptop.laptopstore.controllers;
 
 import com.laptop.laptopstore.dtos.CategoryDTO;
 import com.laptop.laptopstore.services.CategoryService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -22,13 +23,13 @@ public class CategoryController {
     // ADMIN APIs
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
-    public ResponseEntity<?> createCategory(@RequestBody CategoryDTO request) {
+    public ResponseEntity<?> createCategory(@Valid @RequestBody CategoryDTO request) {
         return ResponseEntity.ok(categoryService.createCategory(request));
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateCategory(@PathVariable Long id, @RequestBody CategoryDTO request) {
+    public ResponseEntity<?> updateCategory(@PathVariable Long id, @Valid @RequestBody CategoryDTO request) {
         try {
             return ResponseEntity.ok(categoryService.updateCategory(id, request));
         } catch (RuntimeException e) {

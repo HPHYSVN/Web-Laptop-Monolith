@@ -1,9 +1,13 @@
 package com.laptop.laptopstore.services;
 
 import com.laptop.laptopstore.dtos.OrderDTO;
+import com.laptop.laptopstore.dtos.PageResponseDTO;
 import com.laptop.laptopstore.models.*;
 import com.laptop.laptopstore.repositories.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -81,10 +85,36 @@ public class OrderService {
         return orderRepository.findAll().stream().map(this::convertToDTO).collect(Collectors.toList());
     }
 
+    public PageResponseDTO<OrderDTO> getOrdersPage(int page, int size, String status, String keyword) {
+        Page<OrderDTO> orderPage = orderRepository
+                .findAll(OrderSpecification.filter(status, keyword), PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "orderDate")))
+                .map(this::convertToDTO);
+
+        return PageResponseDTO.<OrderDTO>builder()
+                .content(orderPage.getContent())
+                .page(orderPage.getNumber())
+                .size(orderPage.getSize())
+                .totalElements(orderPage.getTotalElements())
+                .totalPages(orderPage.getTotalPages())
+                .first(orderPage.isFirst())
+                .last(orderPage.isLast())
+                .build();
+    }
+
     public OrderDTO updateOrderStatus(Long orderId, String status) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
         order.setStatus(status);
         return convertToDTO(orderRepository.save(order));
+    }
+
+    @Transactional
+    public void deleteOrders(List<Long> ids) {
+        for (Long id : ids) {
+            if (orderRepository.existsById(id)) {
+                orderDetailRepository.deleteByOrderId(id);
+                orderRepository.deleteById(id);
+            }
+        }
     }
 }

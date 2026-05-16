@@ -4,9 +4,25 @@ import com.laptop.laptopstore.dtos.*;
 import com.laptop.laptopstore.models.*;
 import com.laptop.laptopstore.repositories.*;
 import lombok.RequiredArgsConstructor;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayOutputStream;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -31,6 +47,35 @@ public class ProductService {
     @Transactional(readOnly = true)
     public List<ProductDTO> getAllProducts() {
         return productRepository.findAll().stream().map(this::convertToDTO).collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponseDTO<ProductDTO> getProductsPage(int page, int size, ProductFilterDTO filterDTO) {
+        Pageable pageable = PageRequest.of(page, size, buildSort(filterDTO.getSortBy(), filterDTO.getSortOrder()));
+        Page<ProductDTO> productPage = productRepository
+                .findAll(ProductSpecification.filterProducts(filterDTO), pageable)
+                .map(this::convertToDTO);
+
+        return PageResponseDTO.<ProductDTO>builder()
+                .content(productPage.getContent())
+                .page(productPage.getNumber())
+                .size(productPage.getSize())
+                .totalElements(productPage.getTotalElements())
+                .totalPages(productPage.getTotalPages())
+                .first(productPage.isFirst())
+                .last(productPage.isLast())
+                .build();
+    }
+
+    private Sort buildSort(String sortBy, String sortOrder) {
+        Sort.Direction direction = "desc".equalsIgnoreCase(sortOrder) ? Sort.Direction.DESC : Sort.Direction.ASC;
+        if ("name".equalsIgnoreCase(sortBy) || "productName".equalsIgnoreCase(sortBy)) {
+            return Sort.by(direction, "productName");
+        }
+        if ("created".equalsIgnoreCase(sortBy) || "createDate".equalsIgnoreCase(sortBy)) {
+            return Sort.by(direction, "createDate");
+        }
+        return Sort.by(Sort.Direction.DESC, "createDate");
     }
 
     @Transactional(readOnly = true)
@@ -186,6 +231,168 @@ public class ProductService {
         }
         // Finally delete the product
         productRepository.deleteById(id);
+    }
+
+    @Transactional
+    public void deleteProducts(List<Long> ids) {
+        for (Long id : ids) {
+            if (productRepository.existsById(id)) {
+                deleteProduct(id);
+            }
+        }
+    }
+
+    @Transactional
+    public int importProducts(MultipartFile file) {
+        String filename = file.getOriginalFilename() != null ? file.getOriginalFilename().toLowerCase() : "";
+        try {
+            List<ProductRequestDTO> requests = filename.endsWith(".xlsx")
+                    ? readProductsFromXlsx(file)
+                    : readProductsFromCsv(file);
+            for (ProductRequestDTO request : requests) {
+                createProduct(request);
+            }
+            return requests.size();
+        } catch (Exception e) {
+            throw new RuntimeException("Không thể import file: " + e.getMessage());
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public byte[] exportProducts(String format) {
+        List<ProductDTO> products = getAllProducts();
+        try {
+            if ("xlsx".equalsIgnoreCase(format)) {
+                return exportProductsXlsx(products);
+            }
+            return exportProductsCsv(products);
+        } catch (Exception e) {
+            throw new RuntimeException("Không thể export file: " + e.getMessage());
+        }
+    }
+
+    private List<ProductRequestDTO> readProductsFromCsv(MultipartFile file) throws Exception {
+        List<ProductRequestDTO> requests = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
+            String line;
+            boolean first = true;
+            while ((line = reader.readLine()) != null) {
+                if (first) {
+                    first = false;
+                    if (line.toLowerCase().contains("productname")) continue;
+                }
+                if (line.trim().isEmpty()) continue;
+                requests.add(toImportRequest(line.split(",", -1)));
+            }
+        }
+        return requests;
+    }
+
+    private List<ProductRequestDTO> readProductsFromXlsx(MultipartFile file) throws Exception {
+        List<ProductRequestDTO> requests = new ArrayList<>();
+        try (Workbook workbook = WorkbookFactory.create(file.getInputStream())) {
+            Sheet sheet = workbook.getSheetAt(0);
+            for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+                Row row = sheet.getRow(i);
+                if (row == null) continue;
+                String[] values = new String[7];
+                for (int c = 0; c < values.length; c++) {
+                    values[c] = readCell(row.getCell(c));
+                }
+                if (values[0] == null || values[0].isBlank()) continue;
+                requests.add(toImportRequest(values));
+            }
+        }
+        return requests;
+    }
+
+    private ProductRequestDTO toImportRequest(String[] values) {
+        ProductRequestDTO request = new ProductRequestDTO();
+        request.setProductName(valueAt(values, 0));
+        request.setProductDescription(valueAt(values, 1));
+        request.setCategoryId(parseLong(valueAt(values, 2)));
+
+        ProductDetailRequestDTO detail = new ProductDetailRequestDTO();
+        detail.setPrice(parseDouble(valueAt(values, 3), 0.0));
+        detail.setQuantity(parseInt(valueAt(values, 4), 0));
+        detail.setColor(valueAt(values, 5));
+        detail.setImageDetail(valueAt(values, 6));
+        request.setDetails(List.of(detail));
+        return request;
+    }
+
+    private byte[] exportProductsCsv(List<ProductDTO> products) {
+        StringBuilder csv = new StringBuilder("productName,description,categoryName,price,quantity,color,image\n");
+        for (ProductDTO product : products) {
+            ProductDetailDTO detail = firstDetail(product);
+            csv.append(escapeCsv(product.getProductName())).append(',')
+                    .append(escapeCsv(product.getProductDescription())).append(',')
+                    .append(escapeCsv(product.getCategoryName())).append(',')
+                    .append(detail != null ? detail.getPrice() : "").append(',')
+                    .append(detail != null ? detail.getQuantity() : "").append(',')
+                    .append(escapeCsv(detail != null ? detail.getColor() : "")).append(',')
+                    .append(escapeCsv(detail != null ? detail.getImageDetail() : "")).append('\n');
+        }
+        return csv.toString().getBytes(StandardCharsets.UTF_8);
+    }
+
+    private byte[] exportProductsXlsx(List<ProductDTO> products) throws Exception {
+        try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            Sheet sheet = workbook.createSheet("Products");
+            String[] headers = {"productName", "description", "categoryName", "price", "quantity", "color", "image"};
+            Row header = sheet.createRow(0);
+            for (int i = 0; i < headers.length; i++) header.createCell(i).setCellValue(headers[i]);
+
+            int rowIndex = 1;
+            for (ProductDTO product : products) {
+                ProductDetailDTO detail = firstDetail(product);
+                Row row = sheet.createRow(rowIndex++);
+                row.createCell(0).setCellValue(product.getProductName());
+                row.createCell(1).setCellValue(product.getProductDescription() != null ? product.getProductDescription() : "");
+                row.createCell(2).setCellValue(product.getCategoryName() != null ? product.getCategoryName() : "");
+                row.createCell(3).setCellValue(detail != null ? detail.getPrice() : 0);
+                row.createCell(4).setCellValue(detail != null ? detail.getQuantity() : 0);
+                row.createCell(5).setCellValue(detail != null && detail.getColor() != null ? detail.getColor() : "");
+                row.createCell(6).setCellValue(detail != null && detail.getImageDetail() != null ? detail.getImageDetail() : "");
+            }
+            workbook.write(out);
+            return out.toByteArray();
+        }
+    }
+
+    private ProductDetailDTO firstDetail(ProductDTO product) {
+        return product.getDetails() != null && !product.getDetails().isEmpty() ? product.getDetails().get(0) : null;
+    }
+
+    private String valueAt(String[] values, int index) {
+        return index < values.length ? values[index].trim() : "";
+    }
+
+    private Long parseLong(String value) {
+        if (value == null || value.isBlank()) return null;
+        return Long.parseLong(value.replace(".0", ""));
+    }
+
+    private Integer parseInt(String value, int fallback) {
+        if (value == null || value.isBlank()) return fallback;
+        return (int) Double.parseDouble(value);
+    }
+
+    private Double parseDouble(String value, double fallback) {
+        if (value == null || value.isBlank()) return fallback;
+        return Double.parseDouble(value);
+    }
+
+    private String readCell(Cell cell) {
+        if (cell == null) return "";
+        cell.setCellType(CellType.STRING);
+        return cell.getStringCellValue().trim();
+    }
+
+    private String escapeCsv(String value) {
+        if (value == null) return "";
+        String escaped = value.replace("\"", "\"\"");
+        return escaped.contains(",") || escaped.contains("\"") || escaped.contains("\n") ? "\"" + escaped + "\"" : escaped;
     }
 
     private ProductsSpecs saveSpecs(ProductSpecsRequestDTO specReq) {
