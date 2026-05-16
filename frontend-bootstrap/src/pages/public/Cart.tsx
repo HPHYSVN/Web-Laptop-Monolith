@@ -1,12 +1,14 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Container, Row, Col, Alert } from 'reactstrap';
+import { Container, Row, Col } from 'reactstrap';
 import { ShoppingBag, Trash2, Minus, Plus, ArrowRight, PackageOpen } from 'lucide-react';
 import { useCart } from '../../contexts/CartContext';
 import PageWrapper from '../../components/PageWrapper';
+import { useTranslation } from 'react-i18next';
 
 const Cart: React.FC = () => {
   const { items, removeItem, updateQuantity, totalItems, totalPrice, clearCart } = useCart();
+  const { t } = useTranslation();
 
   const formatPrice = (price: number): string => {
     return new Intl.NumberFormat('vi-VN', {
@@ -35,9 +37,9 @@ const Cart: React.FC = () => {
             >
               <PackageOpen size={36} />
             </div>
-            <h2 style={{ marginBottom: 8 }}>Your cart is empty</h2>
+            <h2 style={{ marginBottom: 8 }}>{t('public.cartEmpty')}</h2>
             <p style={{ color: 'var(--text-secondary)', marginBottom: 24 }}>
-              Looks like you haven't added any items yet. Start browsing our products!
+              {t('public.cartEmptyDesc')}
             </p>
             <Link
               to="/products"
@@ -45,7 +47,7 @@ const Cart: React.FC = () => {
               style={{ textDecoration: 'none', display: 'inline-flex' }}
             >
               <ShoppingBag size={18} />
-              Continue Shopping
+              {t('public.continueShopping')}
             </Link>
           </div>
         </Container>
@@ -56,9 +58,9 @@ const Cart: React.FC = () => {
   return (
     <PageWrapper>
       <Container style={{ padding: '40px 24px', maxWidth: 'var(--max-width)' }}>
-        <h2 style={{ marginBottom: 4 }}>Shopping Cart</h2>
+        <h2 style={{ marginBottom: 4 }}>{t('public.shoppingCart')}</h2>
         <p style={{ color: 'var(--text-secondary)', marginBottom: 32 }}>
-          {totalItems} {totalItems === 1 ? 'item' : 'items'} in your cart
+          {totalItems} {t('public.productsCount')}
         </p>
 
         <Row className="g-4">
@@ -78,7 +80,7 @@ const Cart: React.FC = () => {
                   <div style={{ flex: 1, minWidth: 200 }}>
                     <h6 style={{ fontWeight: 600, marginBottom: 4, fontSize: '1rem' }}>{item.productName}</h6>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', margin: 0 }}>
-                      Color: <span style={{ fontWeight: 500, color: 'var(--text-main)' }}>{item.color}</span>
+                      {t('public.color')}: <span style={{ fontWeight: 500, color: 'var(--text-main)' }}>{item.color}</span>
                     </p>
                   </div>
                   <div className="d-flex align-items-center" style={{ gap: 12, flexWrap: 'wrap' }}>
@@ -139,7 +141,7 @@ const Cart: React.FC = () => {
                         {formatPrice(item.price * item.quantity)}
                       </p>
                       <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', margin: 0 }}>
-                        {formatPrice(item.price)} each
+                        {formatPrice(item.price)} {t('public.each')}
                       </p>
                     </div>
                     <button
@@ -189,31 +191,31 @@ const Cart: React.FC = () => {
               }}
             >
               <Trash2 size={16} />
-              Clear Cart
+              {t('public.clearCart')}
             </button>
           </Col>
 
           <Col lg={4}>
             <div className="card-modern" style={{ padding: 24, position: 'sticky', top: 'calc(var(--navbar-height) + 24px)' }}>
-              <h5 style={{ marginBottom: 20 }}>Order Summary</h5>
+              <h5 style={{ marginBottom: 20 }}>{t('public.orderSummary')}</h5>
               <div className="d-flex flex-column gap-3" style={{ marginBottom: 20 }}>
                 <div className="d-flex justify-content-between">
-                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.9375rem' }}>Subtotal</span>
+                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.9375rem' }}>{t('public.subtotal')}</span>
                   <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>{formatPrice(totalPrice)}</span>
                 </div>
                 <div className="d-flex justify-content-between">
-                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.9375rem' }}>Shipping</span>
-                  <span className="badge-modern badge-success">Free</span>
+                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.9375rem' }}>{t('public.shipping')}</span>
+                  <span className="badge-modern badge-success">{t('public.free')}</span>
                 </div>
                 <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12 }} className="d-flex justify-content-between">
-                  <span style={{ fontWeight: 600, fontSize: '1.0625rem' }}>Total</span>
+                  <span style={{ fontWeight: 600, fontSize: '1.0625rem' }}>{t('common.total')}</span>
                   <span style={{ fontWeight: 700, fontSize: '1.25rem', color: 'var(--primary)', fontFamily: "'Poppins', sans-serif" }}>
                     {formatPrice(totalPrice)}
                   </span>
                 </div>
               </div>
               <button className="btn-primary-modern btn-lg-modern" style={{ width: '100%' }}>
-                Proceed to Checkout
+                {t('public.checkout')}
                 <ArrowRight size={18} />
               </button>
               <Link
@@ -221,7 +223,7 @@ const Cart: React.FC = () => {
                 className="btn-secondary-modern"
                 style={{ width: '100%', marginTop: 12, textDecoration: 'none', display: 'inline-flex' }}
               >
-                Continue Shopping
+                {t('public.continueShopping')}
               </Link>
             </div>
           </Col>

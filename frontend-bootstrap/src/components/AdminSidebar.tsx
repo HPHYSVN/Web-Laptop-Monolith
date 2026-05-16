@@ -1,18 +1,21 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Laptop, Package, Users, ArrowLeft, Percent, Folder, Layers } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import LanguageSwitcher from './LanguageSwitcher';
 
 const AdminSidebar: React.FC = () => {
   const location = useLocation();
+  const { t } = useTranslation();
 
   const navItems = [
-    { to: '/admin', label: 'Dashboard', icon: LayoutDashboard },
-    { to: '/admin/categories', label: 'Categories', icon: Folder },
-    { to: '/admin/products', label: 'Products', icon: Laptop },
-    { to: '/admin/specs', label: 'Specs', icon: Layers },
-    { to: '/admin/orders', label: 'Orders', icon: Package },
-    { to: '/admin/users', label: 'Users', icon: Users },
-    { to: '/admin/discounts', label: 'Discounts', icon: Percent },
+    { to: '/admin', label: t('admin.dashboard'), icon: LayoutDashboard },
+    { to: '/admin/categories', label: t('admin.categories'), icon: Folder },
+    { to: '/admin/products', label: t('admin.products'), icon: Laptop },
+    { to: '/admin/specs', label: t('admin.specs'), icon: Layers },
+    { to: '/admin/orders', label: t('admin.orders'), icon: Package },
+    { to: '/admin/users', label: t('admin.users'), icon: Users },
+    { to: '/admin/discounts', label: t('admin.discounts'), icon: Percent },
   ];
 
   return (
@@ -69,8 +72,11 @@ const AdminSidebar: React.FC = () => {
             margin: 0,
           }}
         >
-          Management
+          {t('nav.management')}
         </p>
+        <div style={{ padding: '4px 8px 12px' }}>
+          <LanguageSwitcher dark />
+        </div>
         {navItems.map((item) => {
           const isActive = location.pathname === item.to;
           const Icon = item.icon;
@@ -139,7 +145,7 @@ const AdminSidebar: React.FC = () => {
           }}
         >
           <ArrowLeft size={18} />
-          Back to Store
+          {t('nav.back')}
         </Link>
       </div>
     </aside>

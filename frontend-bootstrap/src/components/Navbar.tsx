@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
+import { useTranslation } from 'react-i18next';
+import LanguageSwitcher from './LanguageSwitcher';
 import {
   Laptop, Home, ShoppingCart, User, LogOut, Menu, X, LayoutDashboard, ChevronDown,
 } from 'lucide-react';
@@ -9,6 +11,7 @@ import {
 const Navbar: React.FC = () => {
   const { isAuthenticated, isAdmin, user, logout } = useAuth();
   const { totalItems } = useCart();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -19,8 +22,8 @@ const Navbar: React.FC = () => {
   };
 
   const navLinks = [
-    { to: '/', label: 'Home', icon: <Home size={18} /> },
-    { to: '/products', label: 'Products', icon: <Laptop size={18} /> },
+    { to: '/', label: t('nav.home'), icon: <Home size={18} /> },
+    { to: '/products', label: t('nav.products'), icon: <Laptop size={18} /> },
   ];
 
   return (
@@ -121,13 +124,14 @@ const Navbar: React.FC = () => {
               }}
             >
               <LayoutDashboard size={18} />
-              Admin
+              {t('nav.admin')}
             </Link>
           )}
         </div>
 
         {/* Right Side */}
         <div className="d-none d-md-flex align-items-center gap-3">
+          <LanguageSwitcher />
           {/* Cart */}
           <Link
             to="/cart"
@@ -236,7 +240,7 @@ const Navbar: React.FC = () => {
                     onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
                   >
                     <LogOut size={16} />
-                    Logout
+                    {t('nav.logout')}
                   </button>
                 </div>
               )}
@@ -257,7 +261,7 @@ const Navbar: React.FC = () => {
                 onMouseEnter={(e) => { e.currentTarget.style.color = 'white'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-muted)'; }}
               >
-                Login
+                {t('nav.login')}
               </Link>
               <Link
                 to="/register"
@@ -269,7 +273,7 @@ const Navbar: React.FC = () => {
                   textDecoration: 'none',
                 }}
               >
-                Register
+                {t('nav.register')}
               </Link>
             </div>
           )}
@@ -339,7 +343,7 @@ const Navbar: React.FC = () => {
                 }}
               >
                 <LayoutDashboard size={18} />
-                Admin
+                {t('nav.admin')}
               </Link>
             )}
             <Link
@@ -357,7 +361,7 @@ const Navbar: React.FC = () => {
               }}
             >
               <ShoppingCart size={18} />
-              Cart {totalItems > 0 && `(${totalItems})`}
+              {t('nav.cart')} {totalItems > 0 && `(${totalItems})`}
             </Link>
             {isAuthenticated ? (
               <button
@@ -376,7 +380,7 @@ const Navbar: React.FC = () => {
                 }}
               >
                 <LogOut size={18} />
-                Logout ({user?.username})
+                {t('nav.logout')} ({user?.username})
               </button>
             ) : (
               <>
@@ -395,7 +399,7 @@ const Navbar: React.FC = () => {
                   }}
                 >
                   <User size={18} />
-                  Login
+                  {t('nav.login')}
                 </Link>
                 <Link
                   to="/register"
@@ -413,7 +417,7 @@ const Navbar: React.FC = () => {
                   }}
                 >
                   <User size={18} />
-                  Register
+                  {t('nav.register')}
                 </Link>
               </>
             )}
@@ -425,4 +429,3 @@ const Navbar: React.FC = () => {
 };
 
 export default Navbar;
-

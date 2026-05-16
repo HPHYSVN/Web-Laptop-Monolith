@@ -4,6 +4,7 @@ import { Container, Row, Col, Spinner } from 'reactstrap';
 import { User, Lock, Mail, Phone, UserPlus, ArrowRight } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import PageWrapper from '../../components/PageWrapper';
+import { useTranslation } from 'react-i18next';
 
 const Register: React.FC = () => {
   const [username, setUsername] = useState('');
@@ -14,6 +15,7 @@ const Register: React.FC = () => {
   const [success, setSuccess] = useState('');
   const { register, loading } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,9 +53,9 @@ const Register: React.FC = () => {
                 >
                   <UserPlus size={24} />
                 </div>
-                <h3 style={{ marginBottom: 4 }}>Create account</h3>
+                <h3 style={{ marginBottom: 4 }}>{t('public.createAccount')}</h3>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', margin: 0 }}>
-                  Get started with Laptop Store
+                  {t('public.registerCopy')}
                 </p>
               </div>
 
@@ -91,13 +93,13 @@ const Register: React.FC = () => {
               <form onSubmit={handleSubmit}>
                 <div style={{ marginBottom: 16 }}>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: 6, color: 'var(--text-main)' }}>
-                    Username *
+                    {t('public.username')} *
                   </label>
                   <div className="input-modern d-flex align-items-center gap-2">
                     <User size={18} color="var(--text-muted)" />
                     <input
                       type="text"
-                      placeholder="Enter username"
+                      placeholder={t('public.enterUsername')}
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
                       required
@@ -108,13 +110,13 @@ const Register: React.FC = () => {
 
                 <div style={{ marginBottom: 16 }}>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: 6, color: 'var(--text-main)' }}>
-                    Password *
+                    {t('public.password')} *
                   </label>
                   <div className="input-modern d-flex align-items-center gap-2">
                     <Lock size={18} color="var(--text-muted)" />
                     <input
                       type="password"
-                      placeholder="Enter password"
+                      placeholder={t('public.enterPassword')}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
@@ -125,7 +127,7 @@ const Register: React.FC = () => {
 
                 <div style={{ marginBottom: 16 }}>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: 6, color: 'var(--text-main)' }}>
-                    Email
+                    {t('public.email')}
                   </label>
                   <div className="input-modern d-flex align-items-center gap-2">
                     <Mail size={18} color="var(--text-muted)" />
@@ -141,7 +143,7 @@ const Register: React.FC = () => {
 
                 <div style={{ marginBottom: 24 }}>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: 6, color: 'var(--text-main)' }}>
-                    Phone
+                    {t('public.phone')}
                   </label>
                   <div className="input-modern d-flex align-items-center gap-2">
                     <Phone size={18} color="var(--text-muted)" />
@@ -162,15 +164,15 @@ const Register: React.FC = () => {
                   style={{ width: '100%' }}
                 >
                   {loading ? <Spinner size="sm" color="light" /> : (
-                    <>Create Account <ArrowRight size={18} /></>
+                    <>{t('public.createAccount')} <ArrowRight size={18} /></>
                   )}
                 </button>
               </form>
 
               <p className="text-center" style={{ marginTop: 24, fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                Already have an account?{' '}
+                {t('public.alreadyAccount')}{' '}
                 <Link to="/login" style={{ color: 'var(--primary)', fontWeight: 600, textDecoration: 'none' }}>
-                  Sign in
+                  {t('public.signIn')}
                 </Link>
               </p>
             </div>

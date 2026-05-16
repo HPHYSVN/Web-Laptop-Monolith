@@ -6,10 +6,12 @@ import ProductCard from '../../components/ProductCard';
 import PageWrapper from '../../components/PageWrapper';
 import { ProductDTO } from '../../types';
 import { productService } from '../../services/api';
+import { useTranslation } from 'react-i18next';
 
 const Home: React.FC = () => {
   const [products, setProducts] = useState<ProductDTO[]>([]);
   const [loading, setLoading] = useState(true);
+  const { t } = useTranslation();
 
   useEffect(() => {
     const fetch = async () => {
@@ -53,17 +55,17 @@ const Home: React.FC = () => {
                 style={{ marginBottom: 20, display: 'inline-flex', alignItems: 'center', gap: 6 }}
               >
                 <Zap size={14} />
-                Premium Collection 2025
+                {t('public.heroBadge')}
               </span>
               <h1 style={{ fontSize: '3rem', color: 'white', marginBottom: 20, lineHeight: 1.15 }}>
-                Find Your Perfect
+                {t('public.heroTitleA')}
                 <br />
                 <span style={{ background: 'var(--primary-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                  Laptop
+                  {t('public.heroTitleB')}
                 </span>
               </h1>
               <p style={{ color: 'var(--text-muted)', fontSize: '1.125rem', marginBottom: 32, maxWidth: 480 }}>
-                Discover top-tier laptops with cutting-edge specs, unbeatable prices, and exceptional customer service.
+                {t('public.heroCopy')}
               </p>
               <div className="d-flex flex-wrap gap-3">
                 <Link
@@ -71,7 +73,7 @@ const Home: React.FC = () => {
                   className="btn-primary-modern btn-lg-modern"
                   style={{ textDecoration: 'none', display: 'inline-flex' }}
                 >
-                  Browse Products
+                  {t('public.browse')}
                   <ArrowRight size={20} />
                 </Link>
               </div>
@@ -111,9 +113,9 @@ const Home: React.FC = () => {
         <Container>
           <Row className="g-4">
             {[
-              { icon: Zap, title: 'Latest Technology', desc: 'Cutting-edge processors and GPUs for maximum performance.' },
-              { icon: Shield, title: '2-Year Warranty', desc: 'Every laptop comes with comprehensive warranty coverage.' },
-              { icon: Truck, title: 'Fast Delivery', desc: 'Free shipping nationwide with real-time tracking.' },
+              { icon: Zap, title: t('public.latest'), desc: t('public.latestDesc') },
+              { icon: Shield, title: t('public.warranty'), desc: t('public.warrantyDesc') },
+              { icon: Truck, title: t('public.delivery'), desc: t('public.deliveryDesc') },
             ].map((f, i) => (
               <Col key={f.title} md={4}>
                 <div
@@ -149,15 +151,15 @@ const Home: React.FC = () => {
         <Container>
           <div className="d-flex align-items-center justify-content-between mb-4">
             <div>
-              <h2>Featured Products</h2>
-              <p style={{ color: 'var(--text-secondary)', margin: 0 }}>Handpicked selection of our best laptops</p>
+              <h2>{t('public.featured')}</h2>
+              <p style={{ color: 'var(--text-secondary)', margin: 0 }}>{t('public.featuredDesc')}</p>
             </div>
             <Link
               to="/products"
               className="btn-secondary-modern btn-sm-modern"
               style={{ textDecoration: 'none', display: 'inline-flex' }}
             >
-              View All
+              {t('public.viewAll')}
               <ArrowRight size={16} />
             </Link>
           </div>

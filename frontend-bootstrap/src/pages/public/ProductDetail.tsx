@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import {
-  Container, Row, Col, Spinner, Alert,
-} from 'reactstrap';
+import { Container, Row, Col, Spinner } from 'reactstrap';
 import { ArrowLeft, ShoppingCart, Check, Cpu, HardDrive, Monitor, Battery, Weight, Smartphone, ChevronRight } from 'lucide-react';
 import { ProductDTO, ProductDetailDTO } from '../../types';
 import { productService } from '../../services/api';
 import { useCart } from '../../contexts/CartContext';
 import PageWrapper from '../../components/PageWrapper';
+import { useTranslation } from 'react-i18next';
 
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -19,6 +18,7 @@ const ProductDetail: React.FC = () => {
   const [error, setError] = useState('');
   const [added, setAdded] = useState(false);
   const { addItem } = useCart();
+  const { t } = useTranslation();
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -65,7 +65,7 @@ const ProductDetail: React.FC = () => {
     return (
       <Container className="d-flex flex-column align-items-center gap-3 py-5">
         <Spinner color="primary" />
-        <p style={{ color: 'var(--text-secondary)' }}>Loading product...</p>
+        <p style={{ color: 'var(--text-secondary)' }}>{t('public.loadingProducts')}</p>
       </Container>
     );
   }
@@ -97,7 +97,7 @@ const ProductDetail: React.FC = () => {
       <Container style={{ padding: '32px 24px', maxWidth: 'var(--max-width)' }}>
         {/* Breadcrumb */}
         <div className="d-flex align-items-center gap-2 mb-4" style={{ fontSize: '0.875rem' }}>
-          <Link to="/products" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>Products</Link>
+          <Link to="/products" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>{t('public.products')}</Link>
           <ChevronRight size={14} color="var(--text-muted)" />
           <span style={{ color: 'var(--text-main)', fontWeight: 500 }}>{product.productName}</span>
         </div>
@@ -108,7 +108,7 @@ const ProductDetail: React.FC = () => {
           style={{ marginBottom: 24, display: 'inline-flex' }}
         >
           <ArrowLeft size={16} />
-          Back
+          {t('nav.back')}
         </button>
 
         <Row className="g-4">
@@ -171,7 +171,7 @@ const ProductDetail: React.FC = () => {
             </div>
             <h1 style={{ fontSize: '2rem', marginBottom: 12 }}>{product.productName}</h1>
             <p style={{ color: 'var(--text-secondary)', marginBottom: 24, lineHeight: 1.7 }}>
-              {product.productDescription || 'No description available.'}
+              {product.productDescription || t('public.noProducts')}
             </p>
 
             <div style={{ marginBottom: 24 }}>

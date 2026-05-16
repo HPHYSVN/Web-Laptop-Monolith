@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { ShoppingCart } from 'lucide-react';
 import { ProductDTO } from '../types';
+import { useTranslation } from 'react-i18next';
 
 interface ProductCardProps {
   product: ProductDTO;
@@ -9,6 +10,7 @@ interface ProductCardProps {
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({ product, index = 0 }) => {
+  const { t } = useTranslation();
   const getFirstImage = (): string => {
     if (product.details && product.details.length > 0) {
       return product.details[0].imageDetail || 'https://via.placeholder.com/300x200?text=Laptop';
@@ -54,7 +56,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, index = 0 }) => {
             {product.productName}
           </h5>
           <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: 16, lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-            {product.productDescription || 'No description available.'}
+            {product.productDescription || t('public.noProducts')}
           </p>
           <div className="d-flex align-items-center justify-content-between">
             <span style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--primary)', fontFamily: "'Poppins', sans-serif" }}>
