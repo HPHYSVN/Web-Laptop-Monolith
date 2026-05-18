@@ -205,6 +205,11 @@ export const adminService = {
     return response.data;
   },
 
+  getMonthlyUsers: async (): Promise<LabelValueDTO[]> => {
+    const response = await api.get('/admin/dashboard/users-monthly');
+    return response.data;
+  },
+
   getCategoryShare: async (): Promise<LabelValueDTO[]> => {
     const response = await api.get('/admin/dashboard/category-share');
     return response.data;
@@ -212,7 +217,32 @@ export const adminService = {
 };
 
 export const cartService = {
-  mergeCart: async (userId: number, items: CartItem[]): Promise<any> => {
+  getCart: async (userId: number): Promise<CartItem[]> => {
+    const response = await api.get(`/carts/${userId}`);
+    return response.data;
+  },
+
+  addToCart: async (userId: number, productDetailId: number, quantity: number): Promise<CartItem[]> => {
+    const response = await api.post('/carts/add', { userId, productDetailId, quantity });
+    return response.data;
+  },
+
+  updateQuantity: async (userId: number, cartDetailId: number, quantity: number): Promise<CartItem[]> => {
+    const response = await api.put(`/carts/${cartDetailId}`, { userId, quantity });
+    return response.data;
+  },
+
+  removeItem: async (userId: number, cartDetailId: number): Promise<CartItem[]> => {
+    const response = await api.delete(`/carts/${cartDetailId}`, { params: { userId } });
+    return response.data;
+  },
+
+  clearCart: async (userId: number): Promise<CartItem[]> => {
+    const response = await api.delete(`/carts/clear/${userId}`);
+    return response.data;
+  },
+
+  mergeCart: async (userId: number, items: CartItem[]): Promise<CartItem[]> => {
     const response = await api.post('/carts/merge', {
       userId,
       items: items.map((item) => ({

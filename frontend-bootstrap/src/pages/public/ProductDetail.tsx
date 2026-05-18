@@ -7,6 +7,7 @@ import { productService } from '../../services/api';
 import { useCart } from '../../contexts/CartContext';
 import PageWrapper from '../../components/PageWrapper';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'react-toastify';
 
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -45,19 +46,23 @@ const ProductDetail: React.FC = () => {
     }).format(price);
   };
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (selectedDetail && product) {
-      addItem({
-        id: Date.now(),
-        productDetailId: selectedDetail.id,
-        productName: product.productName,
-        quantity,
-        price: selectedDetail.price,
-        color: selectedDetail.color,
-        image: selectedDetail.imageDetail,
-      });
-      setAdded(true);
-      setTimeout(() => setAdded(false), 2000);
+      try {
+        await addItem({
+          id: Date.now(),
+          productDetailId: selectedDetail.id,
+          productName: product.productName,
+          quantity,
+          price: selectedDetail.price,
+          color: selectedDetail.color,
+          image: selectedDetail.imageDetail,
+        });
+        setAdded(true);
+        setTimeout(() => setAdded(false), 2000);
+      } catch (err: any) {
+        toast.error(err.response?.data || 'Không thể thêm vào giỏ hàng');
+      }
     }
   };
 

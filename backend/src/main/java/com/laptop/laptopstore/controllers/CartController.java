@@ -1,6 +1,6 @@
 package com.laptop.laptopstore.controllers;
 
-import com.laptop.laptopstore.models.CartDetail;
+import com.laptop.laptopstore.dtos.CartItemResponseDTO;
 import com.laptop.laptopstore.services.CartService;
 import com.laptop.laptopstore.dtos.MergeCartRequestDTO;
 import jakarta.validation.Valid;
@@ -21,28 +21,54 @@ public class CartController {
     private final CartService cartService;
 
     @GetMapping("/{userId}")
-    public ResponseEntity<List<CartDetail>> getCart(@PathVariable Long userId) {
-        return ResponseEntity.ok(cartService.getCartDetails(userId));
+    public ResponseEntity<List<CartItemResponseDTO>> getCart(@PathVariable Long userId) {
+        return ResponseEntity.ok(cartService.getCartItems(userId));
     }
 
     @PostMapping("/add")
-    public ResponseEntity<?> addToCart(@Valid @RequestBody AddToCartRequest request) {
+    public ResponseEntity<?> addToCart(@Valid @RequestBody CartItemRequest request) {
         try {
-            CartDetail detail = cartService.addToCart(
+            cartService.addToCart(
                     request.getUserId(), 
                     request.getProductDetailId(), 
                     request.getQuantity());
-            return ResponseEntity.ok(detail);
+            return ResponseEntity.ok(cartService.getCartItems(request.getUserId()));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
+    @PutMapping("/{cartDetailId}")
+    public ResponseEntity<?> updateQuantity(@PathVariable Long cartDetailId, @Valid @RequestBody CartQuantityRequest request) {
+        try {
+            cartService.updateQuantity(request.getUserId(), cartDetailId, request.getQuantity());
+            return ResponseEntity.ok(cartService.getCartItems(request.getUserId()));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/{cartDetailId}")
+    public ResponseEntity<?> deleteItem(@PathVariable Long cartDetailId, @RequestParam Long userId) {
+        try {
+            cartService.deleteItem(userId, cartDetailId);
+            return ResponseEntity.ok(cartService.getCartItems(userId));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/clear/{userId}")
+    public ResponseEntity<?> clearCart(@PathVariable Long userId) {
+        cartService.clearCart(userId);
+        return ResponseEntity.ok(cartService.getCartItems(userId));
+    }
+
     @PostMapping("/merge")
     public ResponseEntity<?> mergeCart(@Valid @RequestBody MergeCartRequestDTO request) {
         try {
-            List<CartDetail> mergedDetails = cartService.mergeCart(request);
-            return ResponseEntity.ok(mergedDetails);
+            cartService.mergeCart(request);
+            return ResponseEntity.ok(cartService.getCartItems(request.getUserId()));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -50,7 +76,7 @@ public class CartController {
 }
 
 @Data
-class AddToCartRequest {
+class CartItemRequest {
     @NotNull(message = "User ID không được để trống")
     private Long userId;
 
@@ -59,5 +85,15 @@ class AddToCartRequest {
 
     @NotNull(message = "Số lượng không được để trống")
     @Min(value = 1, message = "Số lượng phải lớn hơn 0")
+    private Integer quantity;
+}
+
+@Data
+class CartQuantityRequest {
+    @NotNull(message = "User ID không được để trống")
+    private Long userId;
+
+    @NotNull(message = "Số lượng không được để trống")
+    @Min(value = 0, message = "Số lượng không được âm")
     private Integer quantity;
 }

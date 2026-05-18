@@ -4,6 +4,7 @@ import com.laptop.laptopstore.dtos.DashboardDTO;
 import com.laptop.laptopstore.dtos.LabelValueDTO;
 import com.laptop.laptopstore.dtos.MonthlyRevenueDTO;
 import com.laptop.laptopstore.models.Order;
+import com.laptop.laptopstore.repositories.CategoryRepository;
 import com.laptop.laptopstore.repositories.OrderRepository;
 import com.laptop.laptopstore.repositories.ProductRepository;
 import com.laptop.laptopstore.repositories.UserRepository;
@@ -27,6 +28,7 @@ public class DashboardController {
     private final UserRepository userRepository;
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
+    private final CategoryRepository categoryRepository;
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
@@ -82,16 +84,37 @@ public class DashboardController {
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    @GetMapping("/category-share")
-    public ResponseEntity<List<LabelValueDTO>> getCategoryShare() {
-        Map<String, Long> countByCategory = productRepository.findAll().stream()
+    @GetMapping({"/users-monthly", "/users-daily"})
+    public ResponseEntity<List<LabelValueDTO>> getMonthlyUsers() {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM");
+        Map<String, Long> countByMonth = userRepository.findAll().stream()
+                .filter(user -> user.getCreateDate() != null)
                 .collect(Collectors.groupingBy(
-                        product -> product.getCategory() != null ? product.getCategory().getCategoryName() : "Uncategorized",
+                        user -> user.getCreateDate().format(formatter),
+                        TreeMap::new,
                         Collectors.counting()
                 ));
 
-        return ResponseEntity.ok(countByCategory.entrySet().stream()
+        return ResponseEntity.ok(countByMonth.entrySet().stream()
                 .map(entry -> new LabelValueDTO(entry.getKey(), entry.getValue()))
+                .collect(Collectors.toList()));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/category-share")
+    public ResponseEntity<List<LabelValueDTO>> getCategoryShare() {
+        Map<Long, Long> productCountByCategoryId = productRepository.findAll().stream()
+                .filter(product -> product.getCategory() != null)
+                .collect(Collectors.groupingBy(
+                        product -> product.getCategory().getId(),
+                        Collectors.counting()
+                ));
+
+        return ResponseEntity.ok(categoryRepository.findAll().stream()
+                .map(category -> new LabelValueDTO(
+                        category.getCategoryName(),
+                        productCountByCategoryId.getOrDefault(category.getId(), 0L)
+                ))
                 .sorted(Comparator.comparing(LabelValueDTO::getValue).reversed())
                 .collect(Collectors.toList()));
     }

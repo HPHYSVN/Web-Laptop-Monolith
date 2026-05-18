@@ -58,6 +58,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = useCallback(() => {
     setUser(null);
     localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(GUEST_CART_KEY);
+    window.dispatchEvent(new Event('cart-reset'));
   }, []);
 
   useEffect(() => {

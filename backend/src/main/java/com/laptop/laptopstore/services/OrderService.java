@@ -23,6 +23,7 @@ public class OrderService {
     private final CartService cartService;
     private final CartDetailRepository cartDetailRepository;
     private final UserRepository userRepository;
+    private final ProductDetailRepository productDetailRepository;
 
     private OrderDTO convertToDTO(Order order) {
         return OrderDTO.builder()
@@ -65,13 +66,23 @@ public class OrderService {
 
         // Create Order Details
         for (CartDetail item : cartItems) {
+            ProductDetail productDetail = item.getProductDetail();
+            Integer stock = productDetail.getQuantity();
+            if (stock != null && stock < item.getQuantity()) {
+                String productName = productDetail.getProduct() != null ? productDetail.getProduct().getProductName() : "Sản phẩm";
+                throw new RuntimeException(productName + " không đủ hàng");
+            }
             OrderDetail detail = OrderDetail.builder()
                     .order(order)
-                    .productDetail(item.getProductDetail())
+                    .productDetail(productDetail)
                     .quantity(item.getQuantity())
                     .price(item.getPrice())
                     .build();
             orderDetailRepository.save(detail);
+            if (stock != null) {
+                productDetail.setQuantity(stock - item.getQuantity());
+                productDetailRepository.save(productDetail);
+            }
         }
 
         // Clear Cart

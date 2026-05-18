@@ -1,4 +1,4 @@
-version: '3.8'
+
 services:
   mysql-db:
     image: mysql:8.0
@@ -12,6 +12,7 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+      - ./backend/src/main/resources/mock-data-tx2.sql:/docker-entrypoint-initdb.d/01-mock-data.sql
     restart: unless-stopped
 
 volumes:

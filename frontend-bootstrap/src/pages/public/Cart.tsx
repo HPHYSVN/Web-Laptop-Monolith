@@ -1,20 +1,63 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Container, Row, Col } from 'reactstrap';
 import { ShoppingBag, Trash2, Minus, Plus, ArrowRight, PackageOpen } from 'lucide-react';
 import { useCart } from '../../contexts/CartContext';
 import PageWrapper from '../../components/PageWrapper';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '../../contexts/AuthContext';
+import { orderService } from '../../services/api';
+import { toast } from 'react-toastify';
 
 const Cart: React.FC = () => {
   const { items, removeItem, updateQuantity, totalItems, totalPrice, clearCart } = useCart();
+  const { user, isAuthenticated } = useAuth();
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const [receiverName, setReceiverName] = useState(user?.username || '');
+  const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
+  const [checkingOut, setCheckingOut] = useState(false);
 
   const formatPrice = (price: number): string => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
       currency: 'VND',
     }).format(price);
+  };
+
+  const handleCartAction = async (action: Promise<void>) => {
+    try {
+      await action;
+    } catch (err: any) {
+      toast.error(err.response?.data || 'Không thể cập nhật giỏ hàng');
+    }
+  };
+
+  const handleCheckout = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!isAuthenticated || !user) {
+      toast.info('Vui lòng đăng nhập để đặt hàng');
+      navigate('/login');
+      return;
+    }
+
+    setCheckingOut(true);
+    try {
+      const order = await orderService.checkout({
+        userId: user.id,
+        receiverName: receiverName.trim(),
+        phone: phone.trim(),
+        address: address.trim(),
+      });
+      await clearCart();
+      toast.success(`Đặt hàng thành công #${order.id}`);
+      navigate('/');
+    } catch (err: any) {
+      toast.error(err.response?.data || 'Không thể đặt hàng');
+    } finally {
+      setCheckingOut(false);
+    }
   };
 
   if (items.length === 0) {
@@ -93,7 +136,7 @@ const Cart: React.FC = () => {
                       }}
                     >
                       <button
-                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                        onClick={() => handleCartAction(updateQuantity(item.id, item.quantity - 1))}
                         style={{
                           width: 36,
                           height: 36,
@@ -120,7 +163,7 @@ const Cart: React.FC = () => {
                         {item.quantity}
                       </span>
                       <button
-                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                        onClick={() => handleCartAction(updateQuantity(item.id, item.quantity + 1))}
                         style={{
                           width: 36,
                           height: 36,
@@ -145,7 +188,7 @@ const Cart: React.FC = () => {
                       </p>
                     </div>
                     <button
-                      onClick={() => removeItem(item.id)}
+                      onClick={() => handleCartAction(removeItem(item.id))}
                       style={{
                         width: 36,
                         height: 36,
@@ -176,7 +219,7 @@ const Cart: React.FC = () => {
             </div>
 
             <button
-              onClick={clearCart}
+              onClick={() => handleCartAction(clearCart())}
               style={{
                 marginTop: 16,
                 background: 'transparent',
@@ -214,10 +257,56 @@ const Cart: React.FC = () => {
                   </span>
                 </div>
               </div>
-              <button className="btn-primary-modern btn-lg-modern" style={{ width: '100%' }}>
-                {t('public.checkout')}
-                <ArrowRight size={18} />
-              </button>
+              <form onSubmit={handleCheckout} className="d-flex flex-column gap-3">
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: 6 }}>
+                    {t('ordersAdmin.receiver')}
+                  </label>
+                  <input
+                    className="input-modern"
+                    value={receiverName}
+                    onChange={(e) => setReceiverName(e.target.value)}
+                    required
+                    placeholder="Nguyen Van A"
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: 6 }}>
+                    {t('usersAdmin.phone')}
+                  </label>
+                  <input
+                    className="input-modern"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    required
+                    pattern="[0-9+\-\s]{8,15}"
+                    placeholder="0900000000"
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: 6 }}>
+                    {t('ordersAdmin.address')}
+                  </label>
+                  <textarea
+                    className="input-modern"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    required
+                    rows={3}
+                    placeholder="So nha, duong, quan/huyen, tinh/thanh"
+                    style={{ resize: 'vertical' }}
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="btn-primary-modern btn-lg-modern"
+                  disabled={checkingOut}
+                  style={{ width: '100%' }}
+                >
+                  {checkingOut ? t('common.loading') : t('public.checkout')}
+                  <ArrowRight size={18} />
+                </button>
+              </form>
               <Link
                 to="/products"
                 className="btn-secondary-modern"

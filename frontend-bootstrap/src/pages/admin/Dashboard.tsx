@@ -3,13 +3,14 @@ import { Row, Col, Spinner } from 'reactstrap';
 import { Users, Package, ShoppingBag, TrendingUp } from 'lucide-react';
 import { DashboardDTO, LabelValueDTO, MonthlyRevenueDTO } from '../../types';
 import { adminService } from '../../services/api';
-import { CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, LineChart, Line } from 'recharts';
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, LineChart, Line } from 'recharts';
 import { useTranslation } from 'react-i18next';
 
 const Dashboard: React.FC = () => {
   const [stats, setStats] = useState<DashboardDTO | null>(null);
   const [revenue, setRevenue] = useState<MonthlyRevenueDTO[]>([]);
   const [orderStatus, setOrderStatus] = useState<LabelValueDTO[]>([]);
+  const [monthlyUsers, setMonthlyUsers] = useState<LabelValueDTO[]>([]);
   const [categoryShare, setCategoryShare] = useState<LabelValueDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -18,15 +19,17 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const [statsData, revenueData, statusData, categoryData] = await Promise.all([
+        const [statsData, revenueData, statusData, monthlyUsersData, categoryData] = await Promise.all([
           adminService.getDashboardStats(),
           adminService.getMonthlyRevenue(),
           adminService.getOrderStatusStats(),
+          adminService.getMonthlyUsers(),
           adminService.getCategoryShare(),
         ]);
         setStats(statsData);
         setRevenue(revenueData);
         setOrderStatus(statusData);
+        setMonthlyUsers(monthlyUsersData);
         setCategoryShare(categoryData);
       } catch {
         setError(t('messages.loadError'));
@@ -122,16 +125,30 @@ const Dashboard: React.FC = () => {
                 </ResponsiveContainer>
               </div>
             </Col>
-            <Col xs={12}>
-              <div className="card-modern" style={{ padding: 20, height: 340 }}>
-                <h5>{t('dashboard.categoryShare')}</h5>
+            <Col xs={12} lg={6}>
+              <div className="card-modern" style={{ padding: 20, height: 380 }}>
+                <h5>{t('dashboard.usersByMonth')}</h5>
                 <ResponsiveContainer width="100%" height={265}>
+                  <BarChart data={monthlyUsers}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                    <XAxis dataKey="label" />
+                    <YAxis allowDecimals={false} />
+                    <Tooltip />
+                    <Bar dataKey="value" fill="#10B981" radius={[6, 6, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </Col>
+            <Col xs={12} lg={6}>
+              <div className="card-modern" style={{ padding: 20, height: 380 }}>
+                <h5>{t('dashboard.categoryShare')}</h5>
+                <ResponsiveContainer width="100%" height={340}>
                   <PieChart>
-                    <Pie data={categoryShare} dataKey="value" nameKey="label" innerRadius={58} outerRadius={96} paddingAngle={2} label>
+                    <Pie data={categoryShare} dataKey="value" nameKey="label" innerRadius={56} outerRadius={88} paddingAngle={2} cy="45%" label>
                       {categoryShare.map((_, index) => <Cell key={index} fill={colors[index % colors.length]} />)}
                     </Pie>
                     <Tooltip />
-                    <Legend />
+                    <Legend verticalAlign="bottom" height={84} wrapperStyle={{ paddingTop: 28 }} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
