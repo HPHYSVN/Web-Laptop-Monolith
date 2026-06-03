@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
@@ -17,6 +18,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.time.LocalDateTime;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -199,24 +201,85 @@ class LaptopStoreIntegrationTest {
     @Test
     void dashboardAggregationReturnsRevenueAndStatus() throws Exception {
         String token = login("admin", "password123");
-        Order delivered = orderRepository.save(Order.builder()
+        LocalDateTime mayOrderDate = LocalDateTime.of(2026, 5, 20, 10, 30);
+        LocalDateTime juneFirstOrderDate = LocalDateTime.of(2026, 6, 1, 9, 0);
+        LocalDateTime juneSecondOrderDate = LocalDateTime.of(2026, 6, 2, 16, 15);
+
+        Order mayDelivered = orderRepository.save(Order.builder()
                 .user(user)
-                .orderDate(LocalDateTime.now())
+                .orderDate(mayOrderDate)
+                .status("DELIVERED")
+                .totalPrice(10000000.0)
+                .receiverName("Tester")
+                .receiverPhone("0900000000")
+                .receiverAddress("Ha Noi")
+                .build());
+        Order juneDelivered = orderRepository.save(Order.builder()
+                .user(user)
+                .orderDate(juneFirstOrderDate)
                 .status("DELIVERED")
                 .totalPrice(50000000.0)
                 .receiverName("Tester")
                 .receiverPhone("0900000000")
                 .receiverAddress("Ha Noi")
                 .build());
-        orderDetailRepository.save(OrderDetail.builder().order(delivered).productDetail(detail).quantity(1).price(detail.getPrice()).build());
+        orderRepository.save(Order.builder()
+                .user(user)
+                .orderDate(juneSecondOrderDate)
+                .status("PENDING")
+                .totalPrice(90000000.0)
+                .receiverName("Pending Tester")
+                .receiverPhone("0900000001")
+                .receiverAddress("Ha Noi")
+                .build());
+        orderRepository.save(Order.builder()
+                .user(user)
+                .orderDate(juneSecondOrderDate)
+                .status("CANCELLED")
+                .totalPrice(70000000.0)
+                .receiverName("Cancelled Tester")
+                .receiverPhone("0900000002")
+                .receiverAddress("Ha Noi")
+                .build());
+        orderDetailRepository.save(OrderDetail.builder().order(mayDelivered).productDetail(detail).quantity(1).price(detail.getPrice()).build());
+        orderDetailRepository.save(OrderDetail.builder().order(juneDelivered).productDetail(detail).quantity(1).price(detail.getPrice()).build());
 
-        mockMvc.perform(get("/api/admin/dashboard/revenue-monthly").header("Authorization", bearer(token)))
+        mockMvc.perform(get("/api/admin/dashboard")
+                        .header("Authorization", bearer(token))
+                        .param("fromDate", "2026-06-01")
+                        .param("toDate", "2026-06-02"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].revenue").value(50000000.0));
+                .andExpect(jsonPath("$.totalRevenue").value(50000000.0))
+                .andExpect(jsonPath("$.deliveredOrders").value(1))
+                .andExpect(jsonPath("$.averageOrderValue").value(50000000.0));
 
-        mockMvc.perform(get("/api/admin/dashboard/order-status").header("Authorization", bearer(token)))
+        mockMvc.perform(get("/api/admin/dashboard/revenue-series")
+                        .header("Authorization", bearer(token))
+                        .param("fromDate", "2026-05-01")
+                        .param("toDate", "2026-06-30")
+                        .param("groupBy", "MONTH"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].label").value("2026-05"))
+                .andExpect(jsonPath("$[0].revenue").value(10000000.0))
+                .andExpect(jsonPath("$[1].label").value("2026-06"))
+                .andExpect(jsonPath("$[1].revenue").value(50000000.0));
+
+        mockMvc.perform(get("/api/admin/dashboard/order-status")
+                        .header("Authorization", bearer(token))
+                        .param("fromDate", "2026-06-01")
+                        .param("toDate", "2026-06-02"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].label").exists());
+
+        mockMvc.perform(get("/api/admin/dashboard/report")
+                        .header("Authorization", bearer(token))
+                        .param("fromDate", "2026-06-01")
+                        .param("toDate", "2026-06-02")
+                        .param("groupBy", "DAY"))
+                .andExpect(status().isOk())
+                .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=revenue-report-20260601-20260602.xlsx"))
+                .andExpect(content().contentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .andExpect(result -> assertTrue(result.getResponse().getContentAsByteArray().length > 0));
     }
 
     private String login(String username, String password) throws Exception {

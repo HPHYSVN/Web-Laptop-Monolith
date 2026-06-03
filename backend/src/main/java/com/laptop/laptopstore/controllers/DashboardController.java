@@ -1,121 +1,107 @@
 package com.laptop.laptopstore.controllers;
 
 import com.laptop.laptopstore.dtos.DashboardDTO;
+import com.laptop.laptopstore.dtos.DashboardSummaryDTO;
 import com.laptop.laptopstore.dtos.LabelValueDTO;
 import com.laptop.laptopstore.dtos.MonthlyRevenueDTO;
-import com.laptop.laptopstore.models.Order;
-import com.laptop.laptopstore.repositories.CategoryRepository;
-import com.laptop.laptopstore.repositories.OrderRepository;
-import com.laptop.laptopstore.repositories.ProductRepository;
-import com.laptop.laptopstore.repositories.UserRepository;
+import com.laptop.laptopstore.dtos.RevenuePointDTO;
+import com.laptop.laptopstore.services.DashboardService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.time.format.DateTimeFormatter;
-import java.util.Comparator;
+import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/admin/dashboard")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 public class DashboardController {
-    private final UserRepository userRepository;
-    private final OrderRepository orderRepository;
-    private final ProductRepository productRepository;
-    private final CategoryRepository categoryRepository;
+    private final DashboardService dashboardService;
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
-    public ResponseEntity<?> getDashboardStats() {
-        long totalUsers = userRepository.count();
-        long totalOrders = orderRepository.count();
-        long totalProducts = productRepository.count();
-        
-        // Tính tổng doanh thu của các đơn hàng đã giao thành công
-        Double revenue = orderRepository.findAll().stream()
-                .filter(o -> "DELIVERED".equals(o.getStatus()))
-                .mapToDouble(o -> o.getTotalPrice())
-                .sum();
+    public ResponseEntity<DashboardSummaryDTO> getDashboardStats(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate
+    ) {
+        return ResponseEntity.ok(dashboardService.getSummary(fromDate, toDate));
+    }
 
-        DashboardDTO stats = DashboardDTO.builder()
-                .totalUsers(totalUsers)
-                .totalOrders(totalOrders)
-                .totalProducts(totalProducts)
-                .totalRevenue(revenue != null ? revenue : 0.0)
-                .build();
-                
-        return ResponseEntity.ok(stats);
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/legacy")
+    public ResponseEntity<DashboardDTO> getLegacyDashboardStats(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate
+    ) {
+        return ResponseEntity.ok(dashboardService.getLegacyStats(fromDate, toDate));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/revenue-series")
+    public ResponseEntity<List<RevenuePointDTO>> getRevenueSeries(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
+            @RequestParam(defaultValue = "DAY") String groupBy
+    ) {
+        return ResponseEntity.ok(dashboardService.getRevenueSeries(fromDate, toDate, groupBy));
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/revenue-monthly")
-    public ResponseEntity<List<MonthlyRevenueDTO>> getMonthlyRevenue() {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM");
-        Map<String, Double> revenueByMonth = orderRepository.findAll().stream()
-                .filter(order -> "DELIVERED".equals(order.getStatus()))
-                .filter(order -> order.getOrderDate() != null)
-                .collect(Collectors.groupingBy(
-                        order -> order.getOrderDate().format(formatter),
-                        TreeMap::new,
-                        Collectors.summingDouble(Order::getTotalPrice)
-                ));
-
-        return ResponseEntity.ok(revenueByMonth.entrySet().stream()
-                .map(entry -> new MonthlyRevenueDTO(entry.getKey(), entry.getValue()))
-                .collect(Collectors.toList()));
+    public ResponseEntity<List<MonthlyRevenueDTO>> getMonthlyRevenue(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate
+    ) {
+        return ResponseEntity.ok(dashboardService.getMonthlyRevenue(fromDate, toDate));
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/order-status")
-    public ResponseEntity<List<LabelValueDTO>> getOrderStatusStats() {
-        Map<String, Long> countByStatus = orderRepository.findAll().stream()
-                .collect(Collectors.groupingBy(Order::getStatus, Collectors.counting()));
-
-        return ResponseEntity.ok(countByStatus.entrySet().stream()
-                .map(entry -> new LabelValueDTO(entry.getKey(), entry.getValue()))
-                .sorted(Comparator.comparing(LabelValueDTO::getLabel))
-                .collect(Collectors.toList()));
+    public ResponseEntity<List<LabelValueDTO>> getOrderStatusStats(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate
+    ) {
+        return ResponseEntity.ok(dashboardService.getOrderStatusStats(fromDate, toDate));
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping({"/users-monthly", "/users-daily"})
-    public ResponseEntity<List<LabelValueDTO>> getMonthlyUsers() {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM");
-        Map<String, Long> countByMonth = userRepository.findAll().stream()
-                .filter(user -> user.getCreateDate() != null)
-                .collect(Collectors.groupingBy(
-                        user -> user.getCreateDate().format(formatter),
-                        TreeMap::new,
-                        Collectors.counting()
-                ));
-
-        return ResponseEntity.ok(countByMonth.entrySet().stream()
-                .map(entry -> new LabelValueDTO(entry.getKey(), entry.getValue()))
-                .collect(Collectors.toList()));
+    public ResponseEntity<List<LabelValueDTO>> getMonthlyUsers(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
+            @RequestParam(defaultValue = "MONTH") String groupBy
+    ) {
+        return ResponseEntity.ok(dashboardService.getMonthlyUsers(fromDate, toDate, groupBy));
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/category-share")
     public ResponseEntity<List<LabelValueDTO>> getCategoryShare() {
-        Map<Long, Long> productCountByCategoryId = productRepository.findAll().stream()
-                .filter(product -> product.getCategory() != null)
-                .collect(Collectors.groupingBy(
-                        product -> product.getCategory().getId(),
-                        Collectors.counting()
-                ));
+        return ResponseEntity.ok(dashboardService.getCategoryShare());
+    }
 
-        return ResponseEntity.ok(categoryRepository.findAll().stream()
-                .map(category -> new LabelValueDTO(
-                        category.getCategoryName(),
-                        productCountByCategoryId.getOrDefault(category.getId(), 0L)
-                ))
-                .sorted(Comparator.comparing(LabelValueDTO::getValue).reversed())
-                .collect(Collectors.toList()));
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/report")
+    public ResponseEntity<byte[]> exportRevenueReport(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
+            @RequestParam(defaultValue = "DAY") String groupBy
+    ) {
+        byte[] data = dashboardService.exportRevenueReport(fromDate, toDate, groupBy);
+        String filename = dashboardService.buildReportFilename(fromDate, toDate);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(data);
     }
 }
