@@ -105,6 +105,13 @@ export interface DashboardDTO {
   totalProducts: number;
 }
 
+export interface DashboardSummaryDTO extends DashboardDTO {
+  deliveredOrders: number;
+  newUsers: number;
+  averageOrderValue: number;
+  ordersByStatus: LabelValueDTO[];
+}
+
 export interface PageResponseDTO<T> {
   content: T[];
   page: number;
@@ -123,6 +130,18 @@ export interface LabelValueDTO {
 export interface MonthlyRevenueDTO {
   month: string;
   revenue: number;
+}
+
+export interface RevenuePointDTO {
+  label: string;
+  revenue: number;
+  orderCount: number;
+}
+
+export interface DashboardQueryParams {
+  fromDate?: string;
+  toDate?: string;
+  groupBy?: 'DAY' | 'MONTH';
 }
 
 export interface CartItem {

@@ -5,6 +5,7 @@ import {
   OrderStatusRequestDTO, UserStatusRequestDTO, ProductFilterDTO,
   CpuInforDTO, RamInforDTO, GpuInforDTO, ScreenInforDTO, StorageInforDTO,
   DiscountDTO, PageResponseDTO, MonthlyRevenueDTO, LabelValueDTO, CartItem,
+  DashboardSummaryDTO, RevenuePointDTO, DashboardQueryParams,
 } from '../types';
 
 const API_BASE_URL = 'http://localhost:8080/api';
@@ -190,28 +191,46 @@ export const userService = {
 };
 
 export const adminService = {
-  getDashboardStats: async (): Promise<DashboardDTO> => {
-    const response = await api.get('/admin/dashboard');
+  getDashboardStats: async (params?: DashboardQueryParams): Promise<DashboardSummaryDTO> => {
+    const response = await api.get('/admin/dashboard', { params });
     return response.data;
   },
 
-  getMonthlyRevenue: async (): Promise<MonthlyRevenueDTO[]> => {
-    const response = await api.get('/admin/dashboard/revenue-monthly');
+  getLegacyDashboardStats: async (params?: DashboardQueryParams): Promise<DashboardDTO> => {
+    const response = await api.get('/admin/dashboard/legacy', { params });
     return response.data;
   },
 
-  getOrderStatusStats: async (): Promise<LabelValueDTO[]> => {
-    const response = await api.get('/admin/dashboard/order-status');
+  getRevenueSeries: async (params?: DashboardQueryParams): Promise<RevenuePointDTO[]> => {
+    const response = await api.get('/admin/dashboard/revenue-series', { params });
     return response.data;
   },
 
-  getMonthlyUsers: async (): Promise<LabelValueDTO[]> => {
-    const response = await api.get('/admin/dashboard/users-monthly');
+  getMonthlyRevenue: async (params?: DashboardQueryParams): Promise<MonthlyRevenueDTO[]> => {
+    const response = await api.get('/admin/dashboard/revenue-monthly', { params });
+    return response.data;
+  },
+
+  getOrderStatusStats: async (params?: DashboardQueryParams): Promise<LabelValueDTO[]> => {
+    const response = await api.get('/admin/dashboard/order-status', { params });
+    return response.data;
+  },
+
+  getMonthlyUsers: async (params?: DashboardQueryParams): Promise<LabelValueDTO[]> => {
+    const response = await api.get('/admin/dashboard/users-monthly', { params });
     return response.data;
   },
 
   getCategoryShare: async (): Promise<LabelValueDTO[]> => {
     const response = await api.get('/admin/dashboard/category-share');
+    return response.data;
+  },
+
+  exportRevenueReport: async (params?: DashboardQueryParams): Promise<Blob> => {
+    const response = await api.get('/admin/dashboard/report', {
+      params,
+      responseType: 'blob',
+    });
     return response.data;
   },
 };

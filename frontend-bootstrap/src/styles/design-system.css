@@ -260,17 +260,46 @@ a:hover {
   overflow: hidden;
 }
 
-.btn-modern:hover {
+.btn-primary-modern,
+.btn-secondary-modern,
+.btn-danger-modern,
+.btn-success-modern {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 10px 18px;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  font-family: 'Inter', sans-serif;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  white-space: nowrap;
+}
+
+.btn-modern:hover,
+.btn-primary-modern:hover,
+.btn-secondary-modern:hover,
+.btn-danger-modern:hover,
+.btn-success-modern:hover {
   transform: translateY(-1px);
 }
 
-.btn-modern:active {
+.btn-modern:active,
+.btn-primary-modern:active,
+.btn-secondary-modern:active,
+.btn-danger-modern:active,
+.btn-success-modern:active {
   transform: translateY(0) scale(0.98);
 }
 
 .btn-primary-modern {
   background: var(--primary-gradient);
   color: white;
+  border: none;
   box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
 }
 
@@ -294,6 +323,7 @@ a:hover {
 .btn-danger-modern {
   background: var(--danger);
   color: white;
+  border: none;
 }
 
 .btn-danger-modern:hover {
@@ -304,6 +334,7 @@ a:hover {
 .btn-success-modern {
   background: var(--success);
   color: white;
+  border: none;
 }
 
 .btn-success-modern:hover {
@@ -390,6 +421,7 @@ a:hover {
 .table-modern {
   width: 100%;
   border-collapse: collapse;
+  text-align: left;
 }
 
 .table-modern thead {
@@ -409,10 +441,83 @@ a:hover {
 
 .table-modern td {
   padding: 14px 20px;
+  text-align: left;
+  vertical-align: middle;
   font-size: 0.875rem;
   color: var(--text-main);
   border-bottom: 1px solid var(--border-light);
   transition: background var(--transition-fast);
+}
+
+.table-modern th:first-child,
+.table-modern td:first-child {
+  padding-left: 22px;
+}
+
+.table-modern th:last-child,
+.table-modern td:last-child {
+  padding-right: 22px;
+}
+
+/* ============================================
+   DASHBOARD FILTERS
+   ============================================ */
+.dashboard-filter-panel {
+  padding: 18px;
+}
+
+.dashboard-filter-grid {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 22px;
+}
+
+.dashboard-quick-range {
+  flex: 1 1 380px;
+}
+
+.dashboard-filter-dates {
+  display: flex;
+  flex: 1 1 460px;
+  gap: 14px;
+}
+
+.dashboard-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dashboard-filter-label {
+  display: block;
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.dashboard-quick-range-buttons,
+.dashboard-group-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+@media (max-width: 767px) {
+  .dashboard-filter-grid {
+    gap: 18px;
+  }
+
+  .dashboard-filter-dates {
+    flex-direction: column;
+    flex-basis: 100%;
+  }
+
+  .dashboard-quick-range,
+  .dashboard-filter-group {
+    flex-basis: 100%;
+  }
 }
 
 .table-modern tbody tr:hover td {
