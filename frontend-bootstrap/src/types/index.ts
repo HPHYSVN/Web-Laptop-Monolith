@@ -138,6 +138,13 @@ export interface RevenuePointDTO {
   orderCount: number;
 }
 
+export interface ProductSalesDTO {
+  productName: string;
+  quantity: number;
+  revenue: number;
+  revenueShare: number;
+}
+
 export interface DashboardQueryParams {
   fromDate?: string;
   toDate?: string;

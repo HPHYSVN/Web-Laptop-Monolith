@@ -4,10 +4,13 @@ import com.laptop.laptopstore.dtos.DashboardDTO;
 import com.laptop.laptopstore.dtos.DashboardSummaryDTO;
 import com.laptop.laptopstore.dtos.LabelValueDTO;
 import com.laptop.laptopstore.dtos.MonthlyRevenueDTO;
+import com.laptop.laptopstore.dtos.ProductSalesDTO;
 import com.laptop.laptopstore.dtos.RevenuePointDTO;
 import com.laptop.laptopstore.dtos.RevenueReportRowDTO;
 import com.laptop.laptopstore.models.Order;
+import com.laptop.laptopstore.models.OrderDetail;
 import com.laptop.laptopstore.repositories.CategoryRepository;
+import com.laptop.laptopstore.repositories.OrderDetailRepository;
 import com.laptop.laptopstore.repositories.OrderRepository;
 import com.laptop.laptopstore.repositories.ProductRepository;
 import com.laptop.laptopstore.repositories.UserRepository;
@@ -44,6 +47,7 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -61,6 +65,7 @@ public class DashboardService {
 
     private final UserRepository userRepository;
     private final OrderRepository orderRepository;
+    private final OrderDetailRepository orderDetailRepository;
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
 
@@ -179,6 +184,7 @@ public class DashboardService {
                         safePrice(order)
                 ))
                 .collect(Collectors.toList());
+        List<ProductSalesDTO> productSales = getTopProductSales(range.fromDate(), range.toDate(), null);
         ReportContext context = new ReportContext(
                 UUID.randomUUID().toString(),
                 LocalDateTime.now(),
@@ -191,6 +197,7 @@ public class DashboardService {
             ReportStyles styles = createReportStyles(workbook);
             writeSummarySheet(workbook, styles, range, summary, revenueSeries, context);
             writeDetailSheet(workbook, styles, reportRows, context);
+            writeTopProductsSheet(workbook, styles, productSales);
             writeMetadataSheet(workbook, range, reportRows, context);
             workbook.write(out);
             return out.toByteArray();
@@ -236,6 +243,43 @@ public class DashboardService {
 
     private double safePrice(Order order) {
         return order.getTotalPrice() != null ? order.getTotalPrice() : 0;
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProductSalesDTO> getTopProductSales(LocalDate fromDate, LocalDate toDate, Integer limit) {
+        DateRange range = resolveRange(fromDate, toDate);
+        Map<Long, ProductSalesAccumulator> salesByProduct = new LinkedHashMap<>();
+        for (OrderDetail detail : orderDetailRepository.findSoldProductDetailsForReport(DELIVERED, range.fromDateTime(), range.toDateTime())) {
+            if (detail.getProductDetail() == null || detail.getProductDetail().getProduct() == null) {
+                continue;
+            }
+            Long productId = detail.getProductDetail().getProduct().getId();
+            String productName = detail.getProductDetail().getProduct().getProductName();
+            int quantity = detail.getQuantity() != null ? detail.getQuantity() : 0;
+            double revenue = quantity * (detail.getPrice() != null ? detail.getPrice() : 0);
+            ProductSalesAccumulator accumulator = salesByProduct.computeIfAbsent(
+                    productId,
+                    id -> new ProductSalesAccumulator(productName)
+            );
+            accumulator.add(quantity, revenue);
+        }
+
+        double totalProductRevenue = salesByProduct.values().stream()
+                .mapToDouble(ProductSalesAccumulator::revenue)
+                .sum();
+        return salesByProduct.values().stream()
+                .sorted(Comparator
+                        .comparingInt(ProductSalesAccumulator::quantity).reversed()
+                        .thenComparing(Comparator.comparingDouble(ProductSalesAccumulator::revenue).reversed())
+                        .thenComparing(ProductSalesAccumulator::productName))
+                .limit(limit != null && limit > 0 ? limit : Long.MAX_VALUE)
+                .map(accumulator -> new ProductSalesDTO(
+                        accumulator.productName(),
+                        accumulator.quantity(),
+                        accumulator.revenue(),
+                        totalProductRevenue > 0 ? accumulator.revenue() / totalProductRevenue : 0
+                ))
+                .collect(Collectors.toList());
     }
 
     private String currentUsername() {
@@ -298,14 +342,15 @@ public class DashboardService {
         for (RevenueReportRowDTO reportRow : rows) {
             Row row = sheet.createRow(rowIndex++);
             row.setHeightInPoints(20);
-            boolean alternate = row.getRowNum() % 2 == 0;
-            writeNumberCell(row, 0, reportRow.getOrderId(), alternate ? styles.centerAlternate() : styles.center());
-            writeTextCell(row, 1, reportRow.getOrderDate() != null ? reportRow.getOrderDate().format(REPORT_DATE_TIME_FORMATTER) : "", alternate ? styles.bodyAlternate() : styles.body());
-            writeTextCell(row, 2, reportRow.getCustomerName(), alternate ? styles.bodyAlternate() : styles.body());
-            writeTextCell(row, 3, reportRow.getReceiverName(), alternate ? styles.bodyAlternate() : styles.body());
-            writeTextCell(row, 4, displayStatus(reportRow.getStatus()), alternate ? styles.centerAlternate() : styles.center());
-            writeNumberCell(row, 5, reportRow.getTotalPrice(), alternate ? styles.moneyAlternate() : styles.money());
+            writeNumberCell(row, 0, reportRow.getOrderId(), styles.center());
+            writeTextCell(row, 1, reportRow.getOrderDate() != null ? reportRow.getOrderDate().format(REPORT_DATE_TIME_FORMATTER) : "", styles.body());
+            writeTextCell(row, 2, reportRow.getCustomerName(), styles.body());
+            writeTextCell(row, 3, reportRow.getReceiverName(), styles.body());
+            writeTextCell(row, 4, displayStatus(reportRow.getStatus()), styles.center());
+            writeNumberCell(row, 5, reportRow.getTotalPrice(), styles.money());
         }
+        applyBandedRows(sheet, 1, rowIndex - 1, 0, 3);
+        applyBandedRows(sheet, 1, rowIndex - 1, 5, 5);
         applyStatusConditionalFormatting(sheet, Math.max(rowIndex - 1, 1));
 
         int footerStart = rowIndex + 1;
@@ -320,6 +365,40 @@ public class DashboardService {
 
         applyPrintSettings(workbook, sheet, "CHI TIẾT ĐƠN HÀNG", 0);
         autosize(sheet, 6);
+    }
+
+    private void writeTopProductsSheet(Workbook workbook, ReportStyles styles, List<ProductSalesDTO> rows) {
+        Sheet sheet = workbook.createSheet("Sản phẩm bán chạy");
+        sheet.createFreezePane(0, 1);
+
+        Row header = sheet.createRow(0);
+        header.setHeightInPoints(24);
+        writeHeader(header, styles, "STT", "Sản phẩm", "Số lượng bán", "Doanh thu", "Tỷ trọng doanh thu");
+        sheet.setAutoFilter(new CellRangeAddress(0, 0, 0, 4));
+
+        int rowIndex = 1;
+        int rank = 1;
+        for (ProductSalesDTO product : rows) {
+            Row row = sheet.createRow(rowIndex++);
+            row.setHeightInPoints(20);
+            writeNumberCell(row, 0, rank++, styles.center());
+            writeTextCell(row, 1, product.getProductName(), styles.body());
+            writeNumberCell(row, 2, product.getQuantity(), styles.numberRight());
+            writeNumberCell(row, 3, product.getRevenue(), styles.money());
+            writeNumberCell(row, 4, product.getRevenueShare(), styles.percent());
+        }
+        applyBandedRows(sheet, 1, rowIndex - 1, 0, 4);
+
+        int footerStart = rowIndex + 1;
+        int totalQuantity = rows.stream().mapToInt(product -> product.getQuantity() != null ? product.getQuantity() : 0).sum();
+        double totalRevenue = rows.stream().mapToDouble(product -> product.getRevenue() != null ? product.getRevenue() : 0).sum();
+        writeTextCell(sheet.createRow(footerStart), 0, "Tổng số lượng bán:", styles.kpiLabel());
+        writeNumberCell(sheet.getRow(footerStart), 1, totalQuantity, styles.kpiValue());
+        writeTextCell(sheet.createRow(footerStart + 1), 0, "Tổng doanh thu sản phẩm:", styles.kpiLabel());
+        writeNumberCell(sheet.getRow(footerStart + 1), 1, totalRevenue, styles.kpiMoney());
+
+        applyPrintSettings(workbook, sheet, "SẢN PHẨM BÁN CHẠY", 0);
+        autosize(sheet, 5);
     }
 
     private void writeMetadataSheet(Workbook workbook, DateRange range, List<RevenueReportRowDTO> rows, ReportContext context) {
@@ -388,6 +467,21 @@ public class DashboardService {
                 sheet.setColumnWidth(i, 5200);
             }
         }
+    }
+
+    private void applyBandedRows(Sheet sheet, int firstDataRow, int lastDataRow, int firstColumn, int lastColumn) {
+        if (lastDataRow < firstDataRow) {
+            return;
+        }
+        SheetConditionalFormatting formatting = sheet.getSheetConditionalFormatting();
+        ConditionalFormattingRule rule = formatting.createConditionalFormattingRule("MOD(ROW(),2)=0");
+        PatternFormatting pattern = rule.createPatternFormatting();
+        pattern.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+        pattern.setFillPattern(PatternFormatting.SOLID_FOREGROUND);
+        formatting.addConditionalFormatting(
+                new CellRangeAddress[]{new CellRangeAddress(firstDataRow, lastDataRow, firstColumn, lastColumn)},
+                rule
+        );
     }
 
     private String formatRevenueLabel(String label, String groupBy) {
@@ -527,26 +621,15 @@ public class DashboardService {
         kpiValue.setFillPattern(FillPatternType.SOLID_FOREGROUND);
         kpiValue.setAlignment(HorizontalAlignment.CENTER);
 
-        CellStyle bodyAlternate = workbook.createCellStyle();
-        bodyAlternate.cloneStyleFrom(body);
-        bodyAlternate.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
-        bodyAlternate.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-
-        CellStyle centerAlternate = workbook.createCellStyle();
-        centerAlternate.cloneStyleFrom(center);
-        centerAlternate.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
-        centerAlternate.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-
-        CellStyle moneyAlternate = workbook.createCellStyle();
-        moneyAlternate.cloneStyleFrom(money);
-        moneyAlternate.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
-        moneyAlternate.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        CellStyle percent = bordered(workbook);
+        percent.setDataFormat(workbook.createDataFormat().getFormat("0.00%"));
+        percent.setAlignment(HorizontalAlignment.RIGHT);
 
         CellStyle footer = workbook.createCellStyle();
         footer.setFont(footerFont);
         footer.setAlignment(HorizontalAlignment.CENTER);
 
-        return new ReportStyles(title, header, label, value, body, numberRight, center, money, kpiLabel, kpiMoney, kpiValue, bodyAlternate, centerAlternate, moneyAlternate, footer);
+        return new ReportStyles(title, header, label, value, body, numberRight, center, money, kpiLabel, kpiMoney, kpiValue, percent, footer);
     }
 
     private CellStyle bordered(Workbook workbook) {
@@ -557,6 +640,33 @@ public class DashboardService {
         style.setBorderLeft(BorderStyle.THIN);
         style.setVerticalAlignment(VerticalAlignment.CENTER);
         return style;
+    }
+
+    private static class ProductSalesAccumulator {
+        private final String productName;
+        private int quantity;
+        private double revenue;
+
+        private ProductSalesAccumulator(String productName) {
+            this.productName = productName;
+        }
+
+        private void add(int quantity, double revenue) {
+            this.quantity += quantity;
+            this.revenue += revenue;
+        }
+
+        private String productName() {
+            return productName;
+        }
+
+        private int quantity() {
+            return quantity;
+        }
+
+        private double revenue() {
+            return revenue;
+        }
     }
 
     private record DateRange(LocalDate fromDate, LocalDate toDate, LocalDateTime fromDateTime, LocalDateTime toDateTime) {}
@@ -575,9 +685,7 @@ public class DashboardService {
             CellStyle kpiLabel,
             CellStyle kpiMoney,
             CellStyle kpiValue,
-            CellStyle bodyAlternate,
-            CellStyle centerAlternate,
-            CellStyle moneyAlternate,
+            CellStyle percent,
             CellStyle footer
     ) {}
 }

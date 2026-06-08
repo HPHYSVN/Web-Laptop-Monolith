@@ -4,6 +4,7 @@ import com.laptop.laptopstore.dtos.DashboardDTO;
 import com.laptop.laptopstore.dtos.DashboardSummaryDTO;
 import com.laptop.laptopstore.dtos.LabelValueDTO;
 import com.laptop.laptopstore.dtos.MonthlyRevenueDTO;
+import com.laptop.laptopstore.dtos.ProductSalesDTO;
 import com.laptop.laptopstore.dtos.RevenuePointDTO;
 import com.laptop.laptopstore.services.DashboardService;
 import lombok.RequiredArgsConstructor;
@@ -88,6 +89,16 @@ public class DashboardController {
     @GetMapping("/category-share")
     public ResponseEntity<List<LabelValueDTO>> getCategoryShare() {
         return ResponseEntity.ok(dashboardService.getCategoryShare());
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/top-products")
+    public ResponseEntity<List<ProductSalesDTO>> getTopProducts(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
+            @RequestParam(defaultValue = "10") Integer limit
+    ) {
+        return ResponseEntity.ok(dashboardService.getTopProductSales(fromDate, toDate, limit));
     }
 
     @PreAuthorize("hasRole('ADMIN')")

@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Row, Col, Spinner } from 'reactstrap';
 import { Users, Package, ShoppingBag, TrendingUp, CalendarDays, Download, RefreshCw, BarChart3 } from 'lucide-react';
-import { DashboardQueryParams, DashboardSummaryDTO, LabelValueDTO, RevenuePointDTO } from '../../types';
+import { DashboardQueryParams, DashboardSummaryDTO, LabelValueDTO, ProductSalesDTO, RevenuePointDTO } from '../../types';
 import { adminService } from '../../services/api';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, LineChart, Line } from 'recharts';
 import { useTranslation } from 'react-i18next';
@@ -51,6 +51,7 @@ const Dashboard: React.FC = () => {
   const [orderStatus, setOrderStatus] = useState<LabelValueDTO[]>([]);
   const [monthlyUsers, setMonthlyUsers] = useState<LabelValueDTO[]>([]);
   const [categoryShare, setCategoryShare] = useState<LabelValueDTO[]>([]);
+  const [topProducts, setTopProducts] = useState<ProductSalesDTO[]>([]);
   const [fromDate, setFromDate] = useState(initialRange.fromDate);
   const [toDate, setToDate] = useState(initialRange.toDate);
   const [groupBy, setGroupBy] = useState<GroupBy>('MONTH');
@@ -64,12 +65,13 @@ const Dashboard: React.FC = () => {
   const fetchStats = useCallback(async () => {
     setLoading(true);
     try {
-      const [statsResult, revenueResult, statusResult, monthlyUsersResult, categoryResult] = await Promise.allSettled([
+      const [statsResult, revenueResult, statusResult, monthlyUsersResult, categoryResult, topProductsResult] = await Promise.allSettled([
         adminService.getDashboardStats(appliedFilters),
         adminService.getRevenueSeries(appliedFilters),
         adminService.getOrderStatusStats(appliedFilters),
         adminService.getMonthlyUsers(appliedFilters),
         adminService.getCategoryShare(),
+        adminService.getTopProducts({ ...appliedFilters, limit: 10 }),
       ]);
 
       if (statsResult.status === 'fulfilled') setStats(statsResult.value);
@@ -77,8 +79,9 @@ const Dashboard: React.FC = () => {
       if (statusResult.status === 'fulfilled') setOrderStatus(statusResult.value);
       if (monthlyUsersResult.status === 'fulfilled') setMonthlyUsers(monthlyUsersResult.value);
       if (categoryResult.status === 'fulfilled') setCategoryShare(categoryResult.value);
+      if (topProductsResult.status === 'fulfilled') setTopProducts(topProductsResult.value);
 
-      const hasRejected = [statsResult, revenueResult, statusResult, monthlyUsersResult, categoryResult].some((result) => result.status === 'rejected');
+      const hasRejected = [statsResult, revenueResult, statusResult, monthlyUsersResult, categoryResult, topProductsResult].some((result) => result.status === 'rejected');
       setError(hasRejected ? t('messages.loadError') : '');
     } catch {
       setError(t('messages.loadError'));
@@ -310,6 +313,46 @@ const Dashboard: React.FC = () => {
                     <Tooltip />
                     <Legend verticalAlign="bottom" height={84} wrapperStyle={{ paddingTop: 28 }} />
                   </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </Col>
+            <Col xs={12}>
+              <div className="card-modern" style={{ padding: 20, height: 430 }}>
+                <div className="d-flex align-items-start justify-content-between gap-3 mb-2">
+                  <div>
+                    <h5 style={{ marginBottom: 4 }}>{t('dashboard.topProducts')}</h5>
+                    <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.8125rem' }}>
+                      {t('dashboard.topProductsSubtitle')}
+                    </p>
+                  </div>
+                  <span className="badge-modern badge-primary">Top 10</span>
+                </div>
+                <ResponsiveContainer width="100%" height={340}>
+                  <BarChart data={topProducts} layout="vertical" margin={{ top: 8, right: 28, left: 24, bottom: 8 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                    <XAxis type="number" allowDecimals={false} />
+                    <YAxis
+                      dataKey="productName"
+                      type="category"
+                      width={180}
+                      tick={{ fontSize: 12 }}
+                      tickFormatter={(value) => String(value).length > 24 ? `${String(value).slice(0, 24)}...` : String(value)}
+                    />
+                    <Tooltip
+                      content={({ active, payload }: any) => {
+                        if (!active || !payload?.length) return null;
+                        const item = payload[0].payload as ProductSalesDTO;
+                        return (
+                          <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 8, padding: '10px 12px', boxShadow: '0 10px 24px rgba(15, 23, 42, 0.12)' }}>
+                            <div style={{ fontWeight: 700, marginBottom: 6, maxWidth: 320 }}>{item.productName}</div>
+                            <div style={{ color: 'var(--text-secondary)', fontSize: '0.8125rem' }}>{t('dashboard.soldQuantity')}: {item.quantity}</div>
+                            <div style={{ color: 'var(--text-secondary)', fontSize: '0.8125rem' }}>{t('dashboard.revenue')}: {formatPrice(item.revenue)}</div>
+                          </div>
+                        );
+                      }}
+                    />
+                    <Bar name={t('dashboard.soldQuantity')} dataKey="quantity" fill="#0F766E" radius={[0, 6, 6, 0]} />
+                  </BarChart>
                 </ResponsiveContainer>
               </div>
             </Col>

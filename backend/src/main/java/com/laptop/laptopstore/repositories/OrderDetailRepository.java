@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -20,4 +21,18 @@ public interface OrderDetailRepository extends JpaRepository<OrderDetail, Long> 
     @Modifying
     @Query("DELETE FROM OrderDetail o WHERE o.order.id = :orderId")
     void deleteByOrderId(@Param("orderId") Long orderId);
+
+    @Query("""
+            select od from OrderDetail od
+            join fetch od.order o
+            join fetch od.productDetail pd
+            join fetch pd.product p
+            where o.status = :status
+              and o.orderDate between :from and :to
+            """)
+    List<OrderDetail> findSoldProductDetailsForReport(
+            @Param("status") String status,
+            @Param("from") LocalDateTime from,
+            @Param("to") LocalDateTime to
+    );
 }

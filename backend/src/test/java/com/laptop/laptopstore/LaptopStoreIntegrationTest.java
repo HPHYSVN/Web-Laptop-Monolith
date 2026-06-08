@@ -4,6 +4,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.laptop.laptopstore.models.*;
 import com.laptop.laptopstore.repositories.*;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,9 +18,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.io.ByteArrayInputStream;
 import java.time.LocalDateTime;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -271,6 +276,15 @@ class LaptopStoreIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].label").exists());
 
+        mockMvc.perform(get("/api/admin/dashboard/top-products")
+                        .header("Authorization", bearer(token))
+                        .param("fromDate", "2026-06-01")
+                        .param("toDate", "2026-06-02")
+                        .param("limit", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].productName").value("Asus ROG Test"))
+                .andExpect(jsonPath("$[0].quantity").value(1));
+
         mockMvc.perform(get("/api/admin/dashboard/report")
                         .header("Authorization", bearer(token))
                         .param("fromDate", "2026-06-01")
@@ -279,7 +293,15 @@ class LaptopStoreIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=revenue-report-20260601-20260602.xlsx"))
                 .andExpect(content().contentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
-                .andExpect(result -> assertTrue(result.getResponse().getContentAsByteArray().length > 0));
+                .andExpect(result -> {
+                    byte[] report = result.getResponse().getContentAsByteArray();
+                    assertTrue(report.length > 0);
+                    try (Workbook workbook = WorkbookFactory.create(new ByteArrayInputStream(report))) {
+                        assertTrue(workbook.getSheetIndex("Sản phẩm bán chạy") >= 0);
+                        Sheet summary = workbook.getSheet("Tổng quan");
+                        assertNull(summary.getRow(0).getCell(6));
+                    }
+                });
     }
 
     private String login(String username, String password) throws Exception {

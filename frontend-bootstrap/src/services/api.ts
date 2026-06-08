@@ -5,7 +5,7 @@ import {
   OrderStatusRequestDTO, UserStatusRequestDTO, ProductFilterDTO,
   CpuInforDTO, RamInforDTO, GpuInforDTO, ScreenInforDTO, StorageInforDTO,
   DiscountDTO, PageResponseDTO, MonthlyRevenueDTO, LabelValueDTO, CartItem,
-  DashboardSummaryDTO, RevenuePointDTO, DashboardQueryParams,
+  DashboardSummaryDTO, RevenuePointDTO, DashboardQueryParams, ProductSalesDTO,
 } from '../types';
 
 const API_BASE_URL = 'http://localhost:8080/api';
@@ -223,6 +223,11 @@ export const adminService = {
 
   getCategoryShare: async (): Promise<LabelValueDTO[]> => {
     const response = await api.get('/admin/dashboard/category-share');
+    return response.data;
+  },
+
+  getTopProducts: async (params?: DashboardQueryParams & { limit?: number }): Promise<ProductSalesDTO[]> => {
+    const response = await api.get('/admin/dashboard/top-products', { params });
     return response.data;
   },
 
